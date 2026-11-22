@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manifold: Reconsider after change"
+  short_description: "Reconsider after change with attributed context and scoped conclusions."
+  default_prompt: "Use Manifold to reconsider after change using the supplied context."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "src": "runtime/.python-version",
+      "dest": "~/.local/share/memory/.python-version",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/bin/launch.py",
+      "dest": "~/.local/share/memory/bin/launch.py",
+      "mode": "0755"
+    },
+    {
+      "src": "runtime/bin/state_paths.py",
+      "dest": "~/.local/share/memory/bin/state_paths.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/pyproject.toml",
+      "dest": "~/.local/share/memory/pyproject.toml",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/memory/__init__.py",
+      "dest": "~/.local/share/memory/src/memory/__init__.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/memory/__main__.py",
+      "dest": "~/.local/share/memory/src/memory/__main__.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/memory/admin.py",
+      "dest": "~/.local/share/memory/src/memory/admin.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/memory/server.py",
+      "dest": "~/.local/share/memory/src/memory/server.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/memory/store.py",
+      "dest": "~/.local/share/memory/src/memory/store.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/memory/tools/__init__.py",
+      "dest": "~/.local/share/memory/src/memory/tools/__init__.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/uv.lock",
+      "dest": "~/.local/share/memory/uv.lock",
+      "mode": "0644"
+    }
+  ],
+  "build": "uv sync --frozen --no-dev --python 3.13 --project ~/.local/share/memory",
+  "dest": "~/.local/share/memory/.venv"
+}

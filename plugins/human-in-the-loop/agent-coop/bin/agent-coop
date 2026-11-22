@@ -1,0 +1,42 @@
+#!/bin/sh
+# agent-coop launcher. install.json copies this one file to ~/.local/bin/agent-coop-mcp, agent-coop-up and agent-coop-watch,
+# and the name it was called by picks what runs:
+#   agent-coop-mcp    the stdio MCP shim         (bun run runtime/src/mcp/index.ts)
+#   agent-coop-up     health-check, start, URL   (bun run runtime/scripts/up.ts "$@")
+#   agent-coop-watch  the Monitor waker          (bun run runtime/scripts/watch.ts "$@")
+# The runtime is the installed copy in ~/.local/share/agent-coop/runtime (AGENT_COOP_RUNTIME overrides it),
+# never the plugin folder.
+#
+# Project data goes in <project>/.local-state/agent-coop/, where <project> is $CLAUDE_PROJECT_DIR
+# or, without it, the current directory. Pi Commons used <project>/.pi/coop/ with the same
+# children. Any AGENT_COOP_* variable already set wins over these defaults.
+set -eu
+
+runtime="${AGENT_COOP_RUNTIME:-$HOME/.local/share/agent-coop/runtime}"
+project="${CLAUDE_PROJECT_DIR:-$PWD}"
+state="$project/.local-state/agent-coop"
+
+: "${AGENT_COOP_DB:=$state/agent-coop.sqlite}"
+: "${AGENT_COOP_DATA_DIR:=$state/data}"
+: "${AGENT_COOP_NARRATION_DIR:=$state/data/narration}"
+: "${AGENT_COOP_BACKUP_DIR:=$state/history}"
+: "${AGENT_COOP_ARTIFACTS_DIR:=$state/artifacts}"
+: "${AGENT_COOP_STATIC_DIR:=$runtime/static}"
+export AGENT_COOP_DB AGENT_COOP_DATA_DIR AGENT_COOP_NARRATION_DIR AGENT_COOP_BACKUP_DIR AGENT_COOP_ARTIFACTS_DIR AGENT_COOP_STATIC_DIR
+
+case "$(basename "$0")" in
+  agent-coop-mcp) entry="src/mcp/index.ts" ;;
+  agent-coop-up) entry="scripts/up.ts" ;;
+  agent-coop-watch) entry="scripts/watch.ts" ;;
+  *)
+    echo "agent-coop: call this as agent-coop-mcp, agent-coop-up or agent-coop-watch (got $(basename "$0"))" >&2
+    exit 2
+    ;;
+esac
+
+if [ ! -f "$runtime/$entry" ] || [ ! -d "$runtime/node_modules" ]; then
+  echo "agent-coop: no installed runtime at $runtime (or its node_modules are missing); run the build step in the agent-coop plugin README" >&2
+  exit 2
+fi
+
+exec bun run "$runtime/$entry" "$@"

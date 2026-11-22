@@ -1,0 +1,71 @@
+{
+  "files": [
+    {
+      "src": "runtime/.python-version",
+      "dest": "~/.local/share/alexandria-folder/.python-version",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/bin/launch.py",
+      "dest": "~/.local/share/alexandria-folder/bin/launch.py",
+      "mode": "0755"
+    },
+    {
+      "src": "runtime/bin/state_paths.py",
+      "dest": "~/.local/share/alexandria-folder/bin/state_paths.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/pyproject.toml",
+      "dest": "~/.local/share/alexandria-folder/pyproject.toml",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/rag/__init__.py",
+      "dest": "~/.local/share/alexandria-folder/src/rag/__init__.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/rag/__main__.py",
+      "dest": "~/.local/share/alexandria-folder/src/rag/__main__.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/rag/chunk.py",
+      "dest": "~/.local/share/alexandria-folder/src/rag/chunk.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/rag/embed.py",
+      "dest": "~/.local/share/alexandria-folder/src/rag/embed.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/rag/server.py",
+      "dest": "~/.local/share/alexandria-folder/src/rag/server.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/rag/storage.py",
+      "dest": "~/.local/share/alexandria-folder/src/rag/storage.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/rag/store.py",
+      "dest": "~/.local/share/alexandria-folder/src/rag/store.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/src/rag/tools/__init__.py",
+      "dest": "~/.local/share/alexandria-folder/src/rag/tools/__init__.py",
+      "mode": "0644"
+    },
+    {
+      "src": "runtime/uv.lock",
+      "dest": "~/.local/share/alexandria-folder/uv.lock",
+      "mode": "0644"
+    }
+  ],
+  "build": "uv sync --frozen --no-dev --python 3.13 --project ~/.local/share/alexandria-folder",
+  "dest": "~/.local/share/alexandria-folder/.venv"
+}

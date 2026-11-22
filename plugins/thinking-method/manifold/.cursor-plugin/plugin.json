@@ -1,0 +1,18 @@
+{
+  "name": "manifold",
+  "version": "2026.10.22",
+  "description": "Establish global Manifold spaces through guided discovery and interviews; model needs, requirements, systems and change.",
+  "author": {
+    "name": "piyushsatti",
+    "email": "49362334+piyushsatti@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "manifold",
+    "requirements",
+    "systems",
+    "modeling",
+    "assessment"
+  ],
+  "skills": "./skills/"
+}

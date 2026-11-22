@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "folder": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "exec python3 \"$HOME/.local/share/alexandria-folder/bin/launch.py\""
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      }
+    }
+  }
+}

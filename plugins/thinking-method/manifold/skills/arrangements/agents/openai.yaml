@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manifold: Describe arrangements"
+  short_description: "Describe arrangements with attributed context and scoped conclusions."
+  default_prompt: "Use Manifold to describe arrangements using the supplied context."
+policy:
+  allow_implicit_invocation: true

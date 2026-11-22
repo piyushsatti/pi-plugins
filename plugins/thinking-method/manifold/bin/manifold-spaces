@@ -1,0 +1,139 @@
+#!/usr/bin/env -S python3 -I
+"""Global Manifold spaces: explicit, local, append-only Markdown checkpoints."""
+
+import argparse
+from datetime import datetime, timezone
+import json
+import os
+from pathlib import Path
+import re
+import sys
+import tempfile
+from uuid import uuid4
+
+
+def repository_ancestor(path):
+    return next((p for p in (path, *path.parents) if (p / '.git').exists()), None)
+
+
+def global_root():
+    # Data lives in ~/.local/state/manifold/ (plugins/CONVENTIONS.md rule 6). MANIFOLD_STATE
+    # overrides it, for tests or another user-wide location; it replaces Pi Commons' PI_HOME.
+    configured = os.environ.get('MANIFOLD_STATE')
+    base = Path(configured).expanduser() if configured else Path.home() / '.local' / 'state' / 'manifold'
+    if not base.is_absolute():
+        raise ValueError('MANIFOLD_STATE must be an absolute user-wide path; no cwd fallback')
+    base = base.resolve()
+    root = base / 'spaces'
+    for path in (base, root):
+        if path.is_symlink():
+            raise ValueError('Managed Manifold directories must not be symlinks')
+        if path.exists() and not path.is_dir():
+            raise ValueError(f'Expected a directory: {path}')
+    repo = repository_ancestor(root)
+    if repo:
+        raise ValueError(f'Manifold is global-only; state cannot live in repository {repo}')
+    package = Path(__file__).resolve().parents[1]
+    if root == package or package in root.parents:
+        raise ValueError('State cannot live in the installed package')
+    return root
+
+
+def space_path(root, name):
+    if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,63}', name):
+        raise ValueError('Space filename must be 1–64 lowercase letters, digits or hyphens')
+    space = root / name
+    for path in (space, space / 'checkpoints'):
+        if path.is_symlink():
+            raise ValueError('Space/checkpoint directories must not be symlinks')
+        if path.exists() and not path.is_dir():
+            raise ValueError(f'Expected a directory: {path}')
+    if repository_ancestor(space / 'checkpoints'):
+        raise ValueError('A Manifold space cannot be a repository-local store')
+    return space
+
+
+def checkpoints(space):
+    # No arbitrary file reads: only the append-only checkpoint naming convention.
+    directory = space / 'checkpoints'
+    if not directory.exists():
+        return []
+    paths = []
+    for path in directory.iterdir():
+        if path.suffix != '.md':
+            continue
+        if path.is_symlink():
+            raise ValueError(f'Refusing symlink checkpoint: {path.name}')
+        if re.fullmatch(r'\d{8}T\d{12}Z-[0-9a-f]{12}\.md', path.name) and path.is_file():
+            paths.append(path)
+    return sorted(paths)
+
+
+def save_checkpoint(space, source):
+    text = Path(source).read_text(encoding='utf-8') if source != '-' else sys.stdin.read()
+    if not text.strip():
+        raise ValueError('A checkpoint must contain useful text; no empty scaffold')
+    folder = space / 'checkpoints'
+    folder.mkdir(parents=True, exist_ok=True, mode=0o700)
+    name = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ') + '-' + uuid4().hex[:12] + '.md'
+    destination = folder / name
+    # Publish a complete file atomically; link refuses to overwrite any existing name.
+    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=folder, suffix='.pending', delete=False) as out:
+        temporary = Path(out.name)
+        try:
+            out.write(text.rstrip() + '\n')
+            out.flush()
+            os.fsync(out.fileno())
+            os.link(temporary, destination)
+        finally:
+            temporary.unlink(missing_ok=True)
+    return destination
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=['root', 'list', 'latest', 'checkpoint'])
+    parser.add_argument('--space')
+    parser.add_argument('--content-file', help='Markdown file or - for stdin; used only by checkpoint')
+    args = parser.parse_args()
+    try:
+        root = global_root()
+        if args.action in ('root', 'list') and (args.space or args.content_file):
+            raise ValueError('root/list do not accept a space or content file')
+        if args.action == 'root':
+            print(root)
+        elif args.action == 'list':
+            items = []
+            for entry in sorted(root.iterdir()) if root.exists() else []:
+                # Finder metadata and other ordinary files are not spaces.
+                if not entry.is_dir() and not entry.is_symlink():
+                    continue
+                space = space_path(root, entry.name)
+                if not space.is_dir():
+                    continue
+                history = checkpoints(space)
+                items.append({'space': entry.name, 'latest': str(history[-1]) if history else None})
+            print(json.dumps({'root': str(root), 'spaces': items}, indent=2))
+        else:
+            if not args.space:
+                raise ValueError('--space is required; no cwd-derived or implicit active space')
+            space = space_path(root, args.space)
+            if args.action == 'latest':
+                if args.content_file:
+                    raise ValueError('latest does not write or accept a content file')
+                history = checkpoints(space)
+                if not history:
+                    raise ValueError(f'No saved checkpoint for {args.space}; no state was created')
+                print(history[-1])
+            else:
+                if not args.content_file:
+                    raise ValueError('--content-file is required')
+                print(save_checkpoint(space, args.content_file))
+    except (OSError, ValueError, RuntimeError) as error:
+        print(f'Manifold: {error}', file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

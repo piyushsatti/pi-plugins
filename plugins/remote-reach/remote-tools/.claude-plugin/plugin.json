@@ -1,0 +1,11 @@
+{
+  "name": "remote-tools",
+  "version": "2026.10.28",
+  "description": "Named, read-only operations on remote hosts (docker logs, ps and state, systemd status and logs, host health), enforced on each host by an ssh forced command and offered to the model as MCP tools",
+  "author": {
+    "name": "piyushsatti",
+    "email": "49362334+piyushsatti@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "mcpServers": "./.mcp.json"
+}

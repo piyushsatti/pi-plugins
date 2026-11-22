@@ -1,0 +1,11 @@
+{
+  "defaults": {
+    "max_output_bytes": 65536
+  },
+  "hosts": {
+    "example-host": {
+      "destination": "example-host-ops",
+      "description": "Placeholder: an ssh_config Host alias that logs in as agent-ops with the remote-tools key. Replace before use."
+    }
+  }
+}

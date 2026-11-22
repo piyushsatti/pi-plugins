@@ -1,0 +1,44 @@
+{
+  "files": [
+    {
+      "src": "bin/ordinator-launch-impl",
+      "dest": "~/.local/bin/ordinator-launch-impl",
+      "mode": "0755"
+    },
+    {
+      "src": "bin/ordinator-smoke-impl",
+      "dest": "~/.local/bin/ordinator-smoke-impl",
+      "mode": "0755"
+    },
+    {
+      "src": "bin/ordinator-session-usage",
+      "dest": "~/.local/bin/ordinator-session-usage",
+      "mode": "0755"
+    },
+    {
+      "src": "bin/ordinator-usage-report",
+      "dest": "~/.local/bin/ordinator-usage-report",
+      "mode": "0755"
+    },
+    {
+      "src": "bin/ordinator-window-check",
+      "dest": "~/.local/bin/ordinator-window-check",
+      "mode": "0755"
+    },
+    {
+      "src": "bin/ordinator-lint-agent",
+      "dest": "~/.local/bin/ordinator-lint-agent",
+      "mode": "0755"
+    },
+    {
+      "src": "bin/ordinator-find-clone",
+      "dest": "~/.local/bin/ordinator-find-clone",
+      "mode": "0644"
+    },
+    {
+      "src": "bin/ordinator-known-tools.txt",
+      "dest": "~/.local/bin/ordinator-known-tools.txt",
+      "mode": "0644"
+    }
+  ]
+}

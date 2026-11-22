@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "src": "scripts/stop.sh",
+      "dest": "~/.local/bin/chirp-hook",
+      "mode": "0755"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""Lint a Claude Code agent file: frontmatter keys, allowed values, known tool names, no em dashes."""
+
+import pathlib
+import re
+import sys
+
+REQUIRED = {"name", "description", "tools", "model", "effort"}
+MODELS = {"opus", "sonnet", "haiku"}
+EFFORTS = {"low", "medium", "high", "xhigh", "max"}
+KNOWN_TOOLS_FILE = pathlib.Path(__file__).with_name("ordinator-known-tools.txt")
+# A tools entry is a bare name or a scoped permission pattern such as Bash(git diff:*).
+TOOL_ENTRY = re.compile(r"^([A-Za-z][\w-]*)(\((.*)\))?$")
+
+
+def known_tools() -> set[str]:
+    lines = KNOWN_TOOLS_FILE.read_text().splitlines()
+    return {l.strip() for l in lines if l.strip() and not l.startswith("#")}
+
+
+def split_tools(value: str) -> list[str]:
+    # Commas inside a scoped pattern's parentheses do not separate entries.
+    entries, depth, buf = [], 0, ""
+    for ch in value:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        if ch == "," and depth == 0:
+            entries.append(buf.strip())
+            buf = ""
+        else:
+            buf += ch
+    if buf.strip():
+        entries.append(buf.strip())
+    return entries
+
+
+def lint(path: pathlib.Path, known: set[str]) -> list[str]:
+    text = path.read_text()
+    m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
+    if not m:
+        return [f"{path}: no frontmatter block"]
+    fm = dict(line.split(":", 1) for line in m.group(1).splitlines() if ":" in line)
+    fm = {k.strip(): v.strip() for k, v in fm.items()}
+    errors = []
+    missing = REQUIRED - fm.keys()
+    if missing:
+        errors.append(f"{path}: missing keys {sorted(missing)}")
+    if fm.get("name") != path.stem:
+        errors.append(f"{path}: name {fm.get('name')!r} != filename stem {path.stem!r}")
+    if fm.get("model") not in MODELS:
+        errors.append(f"{path}: model {fm.get('model')!r} not in {sorted(MODELS)}")
+    if fm.get("effort") not in EFFORTS:
+        errors.append(f"{path}: effort {fm.get('effort')!r} not in {sorted(EFFORTS)}")
+    for entry in split_tools(fm.get("tools", "")):
+        em = TOOL_ENTRY.match(entry)
+        if not em:
+            errors.append(f"{path}: malformed tools entry {entry!r}")
+            continue
+        name, scope = em.group(1), em.group(3)
+        if name not in known:
+            errors.append(f"{path}: unknown tool {name!r} (add it to ordinator-known-tools.txt if it is real)")
+        if scope is not None and name != "Bash":
+            errors.append(f"{path}: scoped pattern on {name!r}; only Bash(...) scopes are known to be honoured")
+    if "—" in text:
+        errors.append(f"{path}: contains an em dash")
+    return errors
+
+
+if __name__ == "__main__":
+    known = known_tools()
+    problems = [e for p in sys.argv[1:] for e in lint(pathlib.Path(p), known)]
+    print("\n".join(problems) if problems else "OK")
+    sys.exit(1 if problems else 0)

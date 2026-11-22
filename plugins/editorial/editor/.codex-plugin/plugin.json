@@ -1,0 +1,30 @@
+{
+  "name": "editor",
+  "version": "2026.11.17",
+  "description": "Write and review documents, tickets and PR descriptions against one short rulebook, with a leak check before anything leaves the machine, and a humanizer pass for AI-sounding prose",
+  "author": {
+    "name": "piyushsatti",
+    "email": "49362334+piyushsatti@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "writing",
+    "review",
+    "rulebook",
+    "humanizer"
+  ],
+  "skills": [
+    "./skills"
+  ],
+  "interface": {
+    "displayName": "Editor",
+    "shortDescription": "Draft and review writing against a short rulebook",
+    "developerName": "piyushsatti",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ]
+  }
+}

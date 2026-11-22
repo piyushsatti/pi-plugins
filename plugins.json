@@ -1,0 +1,71 @@
+{
+  "_comment": "The pi marketplace. Each entry with path is a plugin in this repo at that folder. An entry with external is someone else's plugin, cataloged by the source given per harness and never copied here; description and version are stated here because there is no local copy to read them from.",
+  "owner": "piyushsatti",
+  "plugins": [
+    {
+      "name": "observational-memory",
+      "path": "plugins/memory/observational-memory"
+    },
+    {
+      "name": "remote-tools",
+      "path": "plugins/remote-reach/remote-tools"
+    },
+    {
+      "name": "chirp",
+      "path": "plugins/human-in-the-loop/chirp"
+    },
+    {
+      "name": "agent-coop",
+      "path": "plugins/human-in-the-loop/agent-coop"
+    },
+    {
+      "name": "ordinator",
+      "path": "plugins/shipping-code/ordinator"
+    },
+    {
+      "name": "agent-tmux",
+      "path": "plugins/shipping-code/agent-tmux"
+    },
+    {
+      "name": "manifold",
+      "path": "plugins/thinking-method/manifold"
+    },
+    {
+      "name": "alexandria",
+      "path": "plugins/alexandria/alexandria"
+    },
+    {
+      "name": "editor",
+      "path": "plugins/editorial/editor"
+    },
+    {
+      "name": "ponytail",
+      "description": "Lazy senior dev mode. Forces the simplest, shortest solution that actually works: YAGNI, stdlib first, no unrequested abstractions.",
+      "version": "5.3.2",
+      "external": {
+        "claude": {
+          "source": "github",
+          "repo": "DietrichGebert/ponytail",
+          "sha": "16352ac229eb08a9598dcae48fe9f2b342567d86"
+        },
+        "codex": {
+          "source": "url",
+          "url": "https://github.com/DietrichGebert/ponytail.git",
+          "sha": "16352ac229eb08a9598dcae48fe9f2b342567d86"
+        }
+      }
+    },
+    {
+      "name": "repowise",
+      "description": "Third-party plugin by repowise-dev, AGPL-3.0, installed from its own repository (plugins/claude-code). Listed here, not copied.",
+      "version": "0.61.0",
+      "external": {
+        "claude": {
+          "source": "git-subdir",
+          "url": "repowise-dev/repowise",
+          "path": "plugins/claude-code"
+        }
+      }
+    }
+  ]
+}

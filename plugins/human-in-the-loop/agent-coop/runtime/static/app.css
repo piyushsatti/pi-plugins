@@ -1,0 +1,392 @@
+/* Every state signal here is carried by a word or a shape as well as by a
+   colour, never by colour alone (ui-design §Accessibility). */
+:root {
+  color-scheme: light dark;
+  --edge: #8884;
+  --accent: #4062bb;
+  --mark: #ffd76633;
+  --mark-interrupt: #e2554433;
+  --flash: #ffd76688;
+  --wash-add: #2ea04326;
+  --wash-del: #cf222e26;
+  --wash-mod: #9a6dd726;
+  --wash-move: #8884;
+  --code-bg: #8881;
+  --code-edge: #8886;
+  --tok-comment: #6a737d;
+  --tok-string: #0a6640;
+  --tok-number: #a3115e;
+  --tok-keyword: #6f42c1;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tok-comment: #9aa4ae;
+    --tok-string: #7ee2b8;
+    --tok-number: #ff9bc8;
+    --tok-keyword: #c9a4ff;
+  }
+}
+body { font: 16px/1.55 system-ui, sans-serif; margin: 0; }
+agent-coop-app { display: block; max-width: 76rem; margin: 0 auto; padding: 1rem; }
+
+/* --- toolbar ------------------------------------------------------------- */
+doc-toolbar {
+  display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap;
+  border-bottom: 1px solid var(--edge); padding-bottom: .5rem;
+  position: sticky; top: 0; background: Canvas; z-index: 2;
+}
+doc-toolbar h1 { font-size: 1.1rem; margin: 0; flex: 1; }
+/* Document switcher (A1): only rendered when a session holds more than one. */
+.doc-switch { display: flex; gap: .4rem; }
+.doc-tab {
+  font-size: .75rem; border: 1px solid var(--edge); border-radius: 1rem;
+  padding: 0 .5rem;
+}
+.doc-tab[aria-current="page"] { font-weight: 700; border-style: solid; }
+.state-banner:not(:empty) {
+  font-size: .8rem; border: 1px solid var(--edge); border-radius: 1rem;
+  padding: .1rem .6rem;
+}
+
+/* Review / edit switch (MODE-1). Two words rather than an icon, and the live
+   one is marked by weight and a box as well as by colour. Everything below
+   keys off ONE attribute — `data-mode` on the view root. */
+.mode-toggle {
+  display: inline-flex; gap: 0; padding: 2px; font: inherit; font-size: .75rem;
+  border: 1px solid var(--edge); border-radius: 1rem; background: none;
+  color: inherit; cursor: pointer;
+}
+.mode-opt { padding: .05rem .6rem; border-radius: 1rem; }
+document-view[data-mode="review"] .mode-opt[data-mode-opt="review"],
+document-view[data-mode="edit"] .mode-opt[data-mode-opt="edit"] {
+  background: var(--accent); color: white; font-weight: 700;
+}
+.mode-toggle:focus-visible { outline: 2px solid var(--accent); }
+/* Disabled during a turn, because a block edit 409s then whatever the UI says. */
+.mode-toggle:disabled { cursor: not-allowed; opacity: .5; }
+
+/* In edit mode a selection is for editing, so the comment highlights step back:
+   they stay legible (and still clickable) but stop competing with the text
+   being worked on. Opacity only — nothing here decides whether a mark exists. */
+document-view[data-mode="edit"] mark[data-comment-id] { opacity: .4; }
+
+/* --- layout --------------------------------------------------------------
+   A `1fr` grid track still has `min-width: auto`, so ONE unwrappable descendant
+   (a long code line, a URL, a wide table) sets the whole column's min-content
+   width, the column stops shrinking, and the PAGE scrolls sideways — every
+   paragraph beside it dragged along by one line of code. `min-width: 0` on both
+   tracks is what lets the column be narrower than its widest child; the boxes
+   below then scroll that child instead. Both halves are needed: without the
+   min-width the containers cannot shrink, and without the containers the content
+   is simply clipped. */
+main { display: grid; grid-template-columns: 1fr 22rem; gap: 1.5rem; }
+main > * { min-width: 0; }
+document-view[data-drawer="closed"] main { grid-template-columns: 1fr; }
+document-view[data-drawer="closed"] global-comments { display: none; }
+@media (max-width: 768px) { main { grid-template-columns: 1fr; } }
+
+/* --- blocks and the in-place editor -------------------------------------- */
+.rendered-pane { position: relative; min-width: 0; }
+.block {
+  padding: .1rem .4rem; border-left: 2px solid transparent; border-radius: .2rem;
+  /* Prose wraps; a token with no break in it (a long URL, an id) breaks rather
+     than widening the column. */
+  min-width: 0; overflow-wrap: break-word;
+}
+
+/* --- code fences, diagrams, tables: each scrolls in its own box -----------
+   Syntax highlighting is COARSE and dependency-free (web/src/lib/highlight.js):
+   comments, strings, numbers and a shared keyword set. A real grammar library is
+   100KB+ for fences that are mostly a few lines, and vendoring one is out
+   (ui-design §Build), so the container styling does most of the work of making a
+   fence read as code and the colours are a bonus, never the only cue. */
+.block pre, .diff-body pre, .note-body pre, pre.code-block {
+  background: var(--code-bg); border: 1px solid var(--code-edge);
+  border-radius: .3rem; padding: .5rem .6rem; margin: .5rem 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem;
+  overflow-x: auto; max-width: 100%;
+}
+.block :not(pre) > code, .diff-body :not(pre) > code, .note-body :not(pre) > code {
+  background: var(--code-bg); border-radius: .2rem; padding: 0 .2rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em;
+}
+.block pre code { background: none; border: 0; padding: 0; white-space: pre; }
+.tok-comment { color: var(--tok-comment); font-style: italic; }
+.tok-string { color: var(--tok-string); }
+.tok-number { color: var(--tok-number); }
+.tok-keyword { color: var(--tok-keyword); font-weight: 600; }
+
+/* A drawn diagram (A9) is as wide as mermaid made it, which is not a width the
+   column chose. The element is the scroll box (`overflow-x: auto`, capped at the
+   column's width); `max-width: none` on the SVG is what keeps the diagram at its
+   natural size INSIDE that box rather than being squashed to fit it. Both halves
+   are needed, and the SVG's is the one that reads backwards: it opts the diagram
+   OUT of the image rule below, which is exactly why that rule cannot cover it. */
+mermaid-block {
+  display: block; overflow-x: auto; max-width: 100%; margin: .5rem 0;
+}
+mermaid-block[data-error] { border-left: 3px solid #e25544; padding-left: .4rem; }
+mermaid-block svg { max-width: none; height: auto; }
+
+/* An image's intrinsic width is the file's, which no column agreed to. Without
+   this a screenshot dropped into a block sets the `1fr` track's min-content width
+   and the PAGE scrolls sideways — the same failure as a long code line, and the
+   `min-width: 0` above cannot help, because an image has nowhere to wrap. It
+   scales instead of scrolling: a picture shrunk is still the picture. */
+.block img, .diff-body img, .note-body img, .comment img, .thread img {
+  max-width: 100%; height: auto;
+}
+
+.block table, .diff-body table, .note-body table {
+  display: block; width: max-content; max-width: 100%; overflow-x: auto;
+  border-collapse: collapse; margin: .5rem 0;
+}
+.block th, .block td, .diff-body th, .diff-body td, .note-body th, .note-body td {
+  border: 1px solid var(--edge); padding: .2rem .5rem;
+}
+/* The edge on hover means "this opens": only true in edit mode. In review the
+   cursor stays a text cursor, which is what the block is for there. */
+document-view[data-mode="edit"] .block:hover { border-left-color: var(--edge); }
+.block:hover { cursor: text; }
+.block:focus-visible { outline: 2px solid var(--accent); }
+.block[aria-disabled="true"]:hover { border-left-color: transparent; cursor: default; }
+.block[data-editing] { border-left-color: var(--accent); cursor: auto; }
+.block.flash, .comment.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { from { background: var(--flash); } to { background: transparent; } }
+
+.block-editor .cm-editor { border: 1px solid var(--accent); border-radius: .3rem; }
+.block-editor .cm-content { font-family: ui-monospace, SFMono-Regular, monospace; font-size: .9rem; }
+
+/* --- selection comments -------------------------------------------------- */
+mark[data-comment-id] {
+  background: var(--mark); color: inherit;
+  border-bottom: 2px solid var(--accent); cursor: pointer;
+}
+mark[data-delivery="interrupt"] { background: var(--mark-interrupt); }
+mark[data-pending] { opacity: .6; }
+mark[data-comment-id]:focus-visible { outline: 2px solid var(--accent); }
+
+.selection-pill {
+  position: absolute; right: 0; background: Canvas; border: 1px solid var(--edge);
+  padding: .4rem; border-radius: .4rem; min-width: 16rem; z-index: 1;
+}
+.selection-pill textarea, global-comments textarea { width: 100%; box-sizing: border-box; }
+
+/* --- delivery segmented control ------------------------------------------ */
+fieldset.delivery {
+  border: 1px solid var(--edge); border-radius: .3rem;
+  padding: .1rem .4rem .3rem; margin: .4rem 0; display: flex; gap: .1rem;
+}
+fieldset.delivery legend { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; }
+.delivery-option { font-size: .8rem; padding: .1rem .4rem; border-radius: .2rem; cursor: pointer; }
+.delivery-option input { margin-right: .2rem; }
+.delivery-option:has(input:checked) { background: var(--edge); font-weight: 600; }
+.delivery-interrupt:has(input:checked) { background: var(--mark-interrupt); }
+
+/* --- microphone control ---------------------------------------------------
+   Voice is an INPUT METHOD (CLAUDE.md), never a stored artifact: captured by
+   web/src/lib/mic.js and driven by <mic-control> (web/src/components/mic-
+   control.js), one control shared by all three places a comment can be given.
+   Every state is announced in words through `.mic-status[role="status"]`
+   (ui-design §Accessibility: colour and shape are never the only signal, the
+   same rule turn-note.js's audio status follows). `.mic-timer` is deliberately
+   `aria-hidden`: a live region re-announcing a running count every quarter
+   second would be noise, not a signal. The one announcement `.mic-status`
+   makes on entering "recording" is the state that matters to a screen reader. */
+mic-control {
+  display: flex; align-items: center; gap: .4rem; margin: .4rem 0; flex-wrap: wrap;
+}
+.mic-record, .mic-stop, .mic-discard {
+  font: inherit; font-size: .8rem; border: 1px solid var(--edge); border-radius: 1rem;
+  padding: .1rem .6rem; background: none; color: inherit; cursor: pointer;
+}
+.mic-record:focus-visible, .mic-stop:focus-visible, .mic-discard:focus-visible {
+  outline: 2px solid var(--accent);
+}
+/* Recording gets its own colour, same convention as `interrupt` delivery
+   above, and, same rule, `.mic-status`'s sentence is what actually carries
+   the meaning; this is decoration on top of it, not instead of it. */
+mic-control[data-state="recording"] .mic-stop { border-color: #e25544; }
+.mic-status { font-size: .78rem; opacity: .8; }
+/* A failure reads the same way `.note-audio-status.audio-failed` and
+   `.orphan-tag` already do: italic, full opacity, no colour of its own. */
+mic-control[data-state="failed"] .mic-status { font-style: italic; opacity: 1; }
+.mic-timer { font-size: .78rem; font-variant-numeric: tabular-nums; opacity: .7; }
+
+/* The three composers' "sending" status: a voice comment now waits on
+   server-side transcription before the event is appended (CLAUDE.md), long
+   enough that silence during that wait would read as broken. */
+.pill-status, .composer-status, .reply-status { font-size: .78rem; opacity: .8; }
+
+/* --- comments drawer ----------------------------------------------------- */
+global-comments {
+  display: block; border-left: 1px solid var(--edge); padding-left: 1rem;
+  /* The drawer quotes the document, so it inherits the document's problem: a
+     quoted token with no break in it must not widen the 22rem track. */
+  min-width: 0; overflow-wrap: break-word;
+}
+.drawer-head { display: flex; align-items: baseline; gap: .5rem; }
+.drawer-head h2 { flex: 1; font-size: 1rem; }
+.drawer-close { border: 0; background: none; font-size: 1.2rem; cursor: pointer; }
+.comment-list { list-style: none; padding: 0; margin: .5rem 0; }
+.comment {
+  border: 1px solid var(--edge); border-radius: .4rem; padding: .5rem;
+  margin-bottom: .5rem;
+}
+.comment[data-delivery="interrupt"] { border-left: 3px solid #e25544; }
+.comment.resolved { opacity: .6; }
+/* An anchor that no longer points at words (PI-6). Dashed rather than washed
+   out: the comment is still open and still actionable, it just has no highlight
+   to jump to. The .orphan-tag sentence names WHICH of the two happened, so the
+   shape is never the only signal. */
+.comment.orphaned { border-style: dashed; }
+.comment .meta { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+.comment .body { margin: .3rem 0; }
+.comment blockquote { margin: .3rem 0; padding-left: .6rem; border-left: 2px solid var(--edge); }
+.orphan-tag { font-size: .75rem; font-style: italic; margin: .2rem 0; }
+.actions button { font-size: .8rem; }
+.reply-composer { display: flex; gap: .3rem; margin-top: .3rem; }
+.reply-composer textarea { flex: 1; }
+.replies { list-style: none; padding-left: .8rem; border-left: 2px solid var(--edge); }
+.resolved-section summary { cursor: pointer; font-size: .8rem; }
+section.orphaned h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+
+/* --- sessions, diff, toasts ---------------------------------------------- */
+.sessions, .docs { list-style: none; padding: 0; }
+.session-card { display: flex; gap: .75rem; align-items: baseline; padding: .3rem 0; }
+.session-card .state, .badge { font-size: .75rem; border: 1px solid var(--edge); border-radius: 1rem; padding: 0 .5rem; }
+.add-doc { display: flex; gap: .5rem; align-items: baseline; margin: .75rem 0; }
+.add-doc label { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+/* A new session opens on ONE empty block (ENTRY-1), and an empty block rendered
+   to nothing is a blank page with no visible target — the block was clickable the
+   whole time and nothing said so. Two signals, neither of them colour: the words
+   `.block-placeholder` puts in the DOM, and an outline that shows where the
+   clickable region is. `:empty` keeps the old height rule for any block that has
+   no placeholder in it. */
+.block:empty { min-height: 1.4rem; }
+.block[data-empty] {
+  min-height: 1.4rem; border: 1px dashed var(--edge); border-radius: .2rem;
+}
+.block[data-empty]:hover, .block[data-empty]:focus-visible { border-style: solid; }
+.block-placeholder { margin: 0; opacity: .55; font-style: italic; }
+.toast:not([hidden]) { background: #b00; color: #fff; padding: .5rem; border-radius: .3rem; margin-bottom: .5rem; }
+
+/* --- turn note -------------------------------------------------------------
+   Claude's own interpretation of a turn: on demand, so NO note is the common
+   case (`.note-fallback`, <turn-summary> reused rather than duplicated) and
+   must read as deliberate, not as an empty panel. When a note exists it is
+   rendered markdown — same renderer as the document and diff panes, so it
+   needs the identical min-width/overflow-x treatment `.diff-pane`/`.diff-body`
+   already carry, or one wide table here widens the whole page. */
+turn-note { display: block; margin: 1rem 0; }
+turn-note h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; margin: 0 0 .3rem; }
+.note-pane, .note-body-wrap, .note-body { min-width: 0; }
+.note-body { overflow-wrap: break-word; }
+/* "Roughly six lines" (ui-design): a fixed max-height clips the BOX, which
+   works for arbitrary rendered HTML (headings, tables, fences) in a way that
+   counting text lines cannot. The fade is decoration only — "read all" on the
+   button below it is the signal a screen reader and a colourblind reader both
+   get, so the gradient carries no meaning of its own. */
+.note-body-wrap {
+  position: relative; overflow: hidden; max-height: calc(6 * 1.55em);
+}
+.note-body-wrap[data-expanded="true"] { max-height: none; }
+.note-body-wrap:not([data-expanded="true"])::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1.6em;
+  background: linear-gradient(to bottom, transparent, Canvas);
+}
+.note-expand {
+  font: inherit; font-size: .78rem; margin: .3rem 0 0; border: 1px solid var(--edge);
+  border-radius: 1rem; padding: 0 .6rem; background: none; color: inherit; cursor: pointer;
+}
+.note-expand:focus-visible { outline: 2px solid var(--accent); }
+
+.note-audio { display: flex; align-items: center; gap: .5rem; margin-top: .6rem; }
+.note-listen {
+  font: inherit; font-size: .8rem; border: 1px solid var(--edge); border-radius: 1rem;
+  padding: .1rem .7rem; background: none; color: inherit; cursor: pointer;
+}
+/* Disabled ("rendering") is a real state, not decoration: the word beside it
+   carries the meaning (§Accessibility), `disabled` is the shape that survives
+   the stylesheet being off, and neither depends on the dimming below. */
+.note-listen:disabled { cursor: not-allowed; opacity: .6; }
+.note-listen:focus-visible { outline: 2px solid var(--accent); }
+.note-audio-status { font-size: .78rem; opacity: .8; }
+/* A failed render REPLACES the button (there is nothing left to press), so
+   the reason needs its own non-colour cue too: italic, same convention as
+   .orphan-tag for an anchor that stopped resolving. */
+.note-audio-status.audio-failed { opacity: 1; font-style: italic; }
+.note-audio-el[hidden] { display: none; }
+
+.note-fallback turn-summary { margin: 0; }
+.note-hint { font-size: .78rem; opacity: .7; font-style: italic; margin: .3rem 0 0; }
+
+/* --- turn diff ------------------------------------------------------------
+   Every wash below is PAIRED with a .change-tag word and a glyph, and the
+   word-level spans are real <ins>/<del> elements, so the diff still reads
+   correctly with colour removed or the stylesheet off entirely
+   (ui-design §Accessibility). */
+turn-summary { display: block; margin: 1rem 0; }
+turn-summary h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; margin: 0; }
+turn-summary .summary { margin: .2rem 0 0; }
+turn-summary .summary.empty { opacity: .6; font-style: italic; }
+.diff-legend, .diff-base { font-size: .8rem; opacity: .8; }
+/* Same rule as the document pane: the diff screen paints the same rendered
+   markdown, so a fence in a changed block gets its own scroll box and nothing
+   widens the page. */
+.diff-pane { display: flow-root; min-width: 0; }
+.diff-block {
+  position: relative; padding: .1rem .75rem; margin: .35rem 0;
+  border-left: 4px solid transparent;
+  min-width: 0; overflow-wrap: break-word;
+}
+.diff-body { min-width: 0; }
+.word-diff { overflow-wrap: break-word; }
+.diff-block[data-change="added"]     { border-left-color: #2ea043; background: var(--wash-add); }
+.diff-block[data-change="removed"]   { border-left-color: #cf222e; background: var(--wash-del); }
+.diff-block[data-change="modified"]  { border-left-color: #9a6dd7; background: var(--wash-mod); }
+.diff-block[data-change="moved"]     { border-left-color: #888;    background: var(--wash-move); }
+/* The user's OWN changes since their last submit (PI-1). The diff exists to
+   show what Claude did, so the user's own hunks recede — but only visually:
+   .change-tag still spells out "by you", which is the signal that survives
+   colour blindness, a screen reader and the stylesheet being off. */
+.diff-block[data-author="user"] { opacity: .6; border-left-style: dashed; }
+.change-tag {
+  display: inline-block; font-size: .7rem; text-transform: uppercase;
+  letter-spacing: .06em; font-weight: 700; border: 1px solid var(--edge);
+  border-radius: 1rem; padding: 0 .5rem; margin-top: .4rem;
+}
+.diff-body > :first-child { margin-top: .2rem; }
+.diff-block details summary { cursor: pointer; font-size: .85rem; }
+.word-diff { margin: .4rem 0 .2rem; font-size: .92rem; opacity: .95; }
+ins.diff-add { background: var(--wash-add); text-decoration: underline; }
+del.diff-del { background: var(--wash-del); text-decoration: line-through; }
+
+/* Past turns (PI-5). Same shape as the document switcher, because it is the same
+   idea: the thing you are looking at is marked and is not a link to itself. */
+.revision-list { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0; }
+.revision-tab {
+  font-size: .75rem; border: 1px solid var(--edge); border-radius: 1rem;
+  padding: 0 .5rem;
+}
+.revision-tab[aria-current="page"] { font-weight: 700; background: var(--edge); }
+
+/* The turn's conversation (PI-7). No author styling anywhere: the seam
+   authenticates no actor, so nothing here may look like it knows one. */
+.turn-threads { margin: 1.5rem 0 0; border-top: 1px solid var(--edge); padding-top: .5rem; }
+.turn-threads h2 {
+  font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; margin: 0 0 .4rem;
+}
+.thread-list { list-style: none; padding: 0; margin: 0; }
+.thread {
+  border: 1px solid var(--edge); border-radius: .4rem; padding: .5rem; margin-bottom: .5rem;
+}
+.thread blockquote { margin: .3rem 0; padding-left: .6rem; border-left: 2px solid var(--edge); }
+.thread .reply { padding: .2rem 0; }
+
+/* --- export -------------------------------------------------------------- */
+.export-path:not(:empty) {
+  font-size: .75rem; opacity: .85; max-width: 22rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.row { display: flex; gap: .5rem; align-items: center; }

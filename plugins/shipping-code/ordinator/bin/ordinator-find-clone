@@ -1,0 +1,14 @@
+# find_clone <root>: prints the directory directly under root that holds .git and is not
+# the worktrees directory, or exits non-zero with an error on stderr when none is found.
+find_clone() {
+  local root="$1" d clone=""
+  for d in "$root"/*/; do
+    d="${d%/}"
+    [ "$(basename "$d")" = "worktrees" ] && continue
+    [ -e "$d/.git" ] || continue
+    clone="$d"
+    break
+  done
+  [ -n "$clone" ] || { echo "clone directory not found under $root" >&2; exit 2; }
+  printf '%s\n' "$clone"
+}

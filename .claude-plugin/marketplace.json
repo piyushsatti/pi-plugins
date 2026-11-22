@@ -1,0 +1,86 @@
+{
+  "name": "pi",
+  "owner": {
+    "name": "piyushsatti",
+    "email": "49362334+piyushsatti@users.noreply.github.com"
+  },
+  "metadata": {
+    "description": "Plugins for Claude Code. `pi` is unrelated to Pi Agent."
+  },
+  "plugins": [
+    {
+      "name": "observational-memory",
+      "description": "Observational memory beside compaction: an observer model notes what matters as the session runs, and after each compaction the notes are added after the harness's own summary; a recall tool returns the exact transcript lines behind a note",
+      "version": "2026.10.28",
+      "source": "./plugins/memory/observational-memory"
+    },
+    {
+      "name": "remote-tools",
+      "description": "Named, read-only operations on remote hosts (docker logs, ps and state, systemd status and logs, host health), enforced on each host by an ssh forced command and offered to the model as MCP tools",
+      "version": "2026.10.28",
+      "source": "./plugins/remote-reach/remote-tools"
+    },
+    {
+      "name": "chirp",
+      "description": "Speak a concise local outline after the original agent appends a speech marker.",
+      "version": "2026.11.17",
+      "source": "./plugins/human-in-the-loop/chirp"
+    },
+    {
+      "name": "agent-coop",
+      "description": "A shared document-review surface with a SQLite event log, browser UI, and Claude wake-up bridge.",
+      "version": "2026.10.22",
+      "source": "./plugins/human-in-the-loop/agent-coop"
+    },
+    {
+      "name": "ordinator",
+      "description": "Execution orchestration for a fleet of implementation sessions: one orchestrator skill that launches, relays and records; one implementation skill per ticket that plans, builds, reviews and opens a draft PR through the ticket-pr workflow; eleven stage agents with narrow tool surfaces. Configured per project by the setup skill.",
+      "version": "2026.10.22",
+      "source": "./plugins/shipping-code/ordinator"
+    },
+    {
+      "name": "agent-tmux",
+      "description": "Stdio MCP server that lets an agent see and lay out its own tmux session: list, capture, new windows and splits, wait for output, and type into panes it owns without pressing Enter",
+      "version": "2026.10.22",
+      "source": "./plugins/shipping-code/agent-tmux"
+    },
+    {
+      "name": "manifold",
+      "description": "Establish global Manifold spaces through guided discovery and interviews; model needs, requirements, systems and change.",
+      "version": "2026.10.22",
+      "source": "./plugins/thinking-method/manifold"
+    },
+    {
+      "name": "alexandria",
+      "description": "Search a knowledge library from your agent: a local folder mode that indexes the project folders you choose, and a server that serves one committed revision of a Markdown library, locally or hosted",
+      "version": "2026.11.17",
+      "source": "./plugins/alexandria/alexandria"
+    },
+    {
+      "name": "editor",
+      "description": "Write and review documents, tickets and PR descriptions against one short rulebook, with a leak check before anything leaves the machine, and a humanizer pass for AI-sounding prose",
+      "version": "2026.11.17",
+      "source": "./plugins/editorial/editor"
+    },
+    {
+      "name": "ponytail",
+      "description": "Lazy senior dev mode. Forces the simplest, shortest solution that actually works: YAGNI, stdlib first, no unrequested abstractions.",
+      "version": "5.3.2",
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail",
+        "sha": "16352ac229eb08a9598dcae48fe9f2b342567d86"
+      }
+    },
+    {
+      "name": "repowise",
+      "description": "Third-party plugin by repowise-dev, AGPL-3.0, installed from its own repository (plugins/claude-code). Listed here, not copied.",
+      "version": "0.61.0",
+      "source": {
+        "source": "git-subdir",
+        "url": "repowise-dev/repowise",
+        "path": "plugins/claude-code"
+      }
+    }
+  ]
+}

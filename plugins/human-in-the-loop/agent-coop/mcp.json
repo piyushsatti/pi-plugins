@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "agent-coop": {
+      "command": "sh",
+      "args": ["-c", "exec \"$HOME/.local/bin/agent-coop-mcp\""]
+    }
+  }
+}

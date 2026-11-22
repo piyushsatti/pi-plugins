@@ -1,0 +1,553 @@
+#!/usr/bin/env bash
+# ordinator-launch-impl <fleet-dir> <orc> <KEY> <worktree-abs-path> <branch> <base-ref> [--sources FILE] [--force] [--smoke] [--resume [<claude-session-id>]]
+# Creates the child's session directory, handoff and settings, launches it in tmux, watches the pane
+# until the skill loads, then appends or updates the fleet row. Refuses when the worktree or ticket hub
+# is missing, a tmux session of the same name exists, the live child count is at the cap, or the usage
+# window has no headroom. --force skips the last two guards and says so. --sources names a manifest of
+# additional documents to copy into the session directory and list in the handoff; the fixed three
+# (hub, decisions, confluence) are recorded either way. --smoke launches a throwaway environment check instead of a real
+# child: the session name is forced to smoke-<n>, no fleet row is written, and the hub check is skipped.
+# --resume relaunches a child whose process died (tmux exit, host reboot): it requires the session dir,
+# handoff.md and settings.json to already exist, refreshes the copied harness under the worktree so a
+# relaunched child picks up any fix made to the project .claude/ since first launch, sends no prompt, and
+# passes --resume <id> to claude so the resumed process picks the conversation back up; the fleet row is
+# updated in place rather than appended. Without an id it is read from the fleet row's last column,
+# recorded there the first time the child launched. --resume and --smoke are mutually exclusive.
+# Facts come from arguments, from Behaviour lines in <fleet-dir>/orchestrator.md (max_concurrent_children,
+# window_cutoff), and from the project's <root>/.ordinator/PROJECT.md (session prefix, hub path pattern,
+# decisions/confluence/rulebook directories, worktree root), where <root> is found by walking up from
+# fleet-dir looking for .ordinator/PROJECT.md.
+set -euo pipefail
+
+FLEET_DIR=$1; ORC=$2; KEY=$3; WT=$4; BRANCH=$5; BASE=$6
+shift 6
+SOURCES_FILE=""
+FORCE=""
+SMOKE=""
+RESUME=""
+RESUME_ID=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --sources) SOURCES_FILE=$2; shift 2 ;;
+    --force) FORCE="--force"; shift ;;
+    --smoke) SMOKE=1; shift ;;
+    --resume)
+      RESUME=1
+      if [ $# -ge 2 ] && [[ "$2" != --* ]]; then RESUME_ID=$2; shift 2; else shift 1; fi
+      ;;
+    *) echo "unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+[ -n "$RESUME" ] && [ -n "$SMOKE" ] && { echo "--resume and --smoke are mutually exclusive" >&2; exit 2; }
+
+# Walks up from a starting directory looking for .ordinator/PROJECT.md, the way git looks for .git.
+# Fleet-dir depth under the project root is a per-project choice (PROJECT.md's own fleet_dir field),
+# so it cannot be assumed fixed; this makes no assumption about it.
+find_root() {
+  local d="$1"
+  while [ "$d" != "/" ]; do
+    [ -f "$d/.ordinator/PROJECT.md" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "no .ordinator/PROJECT.md found walking up from $1; run /ordinator:setup" >&2
+  exit 2
+}
+ROOT=$(find_root "$FLEET_DIR")
+PROJECT_MD="$ROOT/.ordinator/PROJECT.md"
+
+# Reads one key's value from PROJECT.md's fenced ordinator-project block; empty if absent.
+project_fact() {
+  local key="$1"
+  awk -v k="$key" '
+    /^```ordinator-project$/ { infence=1; next }
+    /^```$/ { if (infence) infence=0; next }
+    infence {
+      line=$0
+      sub(/#.*/, "", line)
+      gsub(/^[ \t]+|[ \t]+$/, "", line)
+      if (line == "") next
+      split(line, kv, /:[ \t]*/)
+      if (kv[1] == k) {
+        val=line
+        sub(/^[^:]+:[ \t]*/, "", val)
+        print val
+        exit
+      }
+    }
+  ' "$PROJECT_MD"
+}
+SESSION_PREFIX=$(project_fact session_prefix)
+HUB_PATTERN=$(project_fact hub_path_pattern)
+DECISIONS_DIR=$(project_fact decisions_dir)
+CONFLUENCE_DIR=$(project_fact confluence_dir)
+RULEBOOK_DIR=$(project_fact rulebook_dir)
+WORKTREE_ROOT=$(project_fact worktree_root)
+for name in SESSION_PREFIX HUB_PATTERN DECISIONS_DIR CONFLUENCE_DIR RULEBOOK_DIR WORKTREE_ROOT; do
+  [ -n "${!name}" ] || { echo "$PROJECT_MD: $name is blank or the project is not configured; run /ordinator:setup" >&2; exit 2; }
+done
+
+FLEET=$(basename "$FLEET_DIR")
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TODAY=$(date +%F)
+FLEET_MD="$FLEET_DIR/fleet.md"
+LAUNCH_TIMEOUT="${LAUNCH_TIMEOUT:-90}"
+DISALLOWED="mcp__plugin_atlassian_atlassian__*,mcp__claude_ai_Atlassian__*,mcp__plugin_chrome-devtools-mcp_chrome-devtools__*,mcp__plugin_playwright_playwright__*,mcp__plugin_github_github__*,CronCreate,CronDelete,CronList,Artifact"
+behaviour() { grep -oE "$1[ =:]+[0-9]+" "$FLEET_DIR/orchestrator.md" 2>/dev/null | grep -oE '[0-9]+' | tail -1; }
+
+if [ -n "$SMOKE" ]; then
+  N=1
+  while tmux has-session -t "smoke-$N" 2>/dev/null || [ -d "$FLEET_DIR/smoke-$N" ]; do N=$((N + 1)); done
+  KEY="smoke-$N"
+  NAME="$KEY"
+else
+  NAME="$SESSION_PREFIX.impl--$KEY"
+fi
+TMUX_NAME="${NAME//./_}"
+SDIR="$FLEET_DIR/$NAME"
+HUB_REL="${HUB_PATTERN//<KEY>/$KEY}"
+HUB_PATH="$ROOT/$HUB_REL"
+
+fleet_line_no() { grep -nF "| $NAME |" "$FLEET_MD" | tail -1 | cut -d: -f1; }
+fleet_claude_id() {
+  local ln v
+  ln=$(fleet_line_no)
+  [ -n "$ln" ] || { echo "not found"; return 0; }
+  v=$(sed -n "${ln}p" "$FLEET_MD" | awk -F'|' '{n=NF-1; gsub(/^[ \t]+|[ \t]+$/, "", $n); print $n}')
+  if [[ "$v" =~ ^[0-9a-fA-F-]{20,}$ ]]; then printf '%s\n' "$v"; else echo "not found"; fi
+}
+set_fleet_state() {
+  local ln cid tmp eol
+  ln=$(fleet_line_no)
+  [ -n "$ln" ] || return 0
+  cid="${2:--}"
+  local newline; newline=$(printf '| %s | %s | %s | %s | %s | %s | %s | - | live | %s |' "$NAME" "$KEY" "$WT" "$BRANCH" "$BASE" "$TODAY" "$1" "$cid")
+  tmp=$(mktemp "$FLEET_MD.XXXXXX")
+  eol=$(tail -c 1 "$FLEET_MD" | wc -l)
+  FLEET_NEWLINE="$newline" awk -v ln="$ln" -v eol="$eol" '
+    NR == ln { $0 = ENVIRON["FLEET_NEWLINE"] }
+    { printf "%s%s", sep, $0; sep = ORS }
+    END { if (eol) printf "%s", ORS }
+  ' "$FLEET_MD" > "$tmp" && mv "$tmp" "$FLEET_MD" || { rm -f "$tmp"; return 1; }
+}
+delete_fleet_row() {
+  local ln tmp eol; ln=$(fleet_line_no)
+  [ -n "$ln" ] || return 1
+  tmp=$(mktemp "$FLEET_MD.XXXXXX")
+  eol=$(tail -c 1 "$FLEET_MD" | wc -l)
+  awk -v ln="$ln" -v eol="$eol" '
+    NR != ln { printf "%s%s", sep, $0; sep = ORS }
+    END { if (sep != "" && (eol || NR == ln)) printf "%s", ORS }
+  ' "$FLEET_MD" > "$tmp" && mv "$tmp" "$FLEET_MD" || { rm -f "$tmp"; return 1; }
+}
+# Two transcript-directory slug candidates: some path segments keep their dot (~/.ssh) in the
+# directory Claude Code creates, others get it folded into a dash along with underscores; try the
+# slash-only replacement first, then the full replacement, and use whichever directory exists.
+find_transcript_dir() {
+  local path="$1" a b
+  a=$(printf '%s' "$path" | sed 's/\//-/g')
+  b=$(printf '%s' "$path" | sed 's/[\/_.]/-/g')
+  if [ -d "$HOME/.claude/projects/$a" ]; then printf '%s\n' "$a"
+  elif [ -d "$HOME/.claude/projects/$b" ]; then printf '%s\n' "$b"
+  fi
+}
+# Bounded pane poll shared by fresh launch and --resume. With a pattern, success is the pattern
+# appearing before the timeout; without one, success is the session outliving the timeout. The
+# session exiting mid-poll fails at once. LAST_PANE holds the last capture for the failure message.
+poll_pane() {
+  local tmux_name="$1" timeout="$2" pattern="${3:-}"
+  local elapsed=0
+  LAST_PANE=""
+  while [ "$elapsed" -lt "$timeout" ]; do
+    if ! tmux has-session -t "$tmux_name" 2>/dev/null; then
+      return 1
+    fi
+    LAST_PANE="$(tmux capture-pane -p -t "$tmux_name" -S -200 2>/dev/null || true)"
+    if [ -n "$pattern" ] && printf '%s' "$LAST_PANE" | grep -q "$pattern"; then
+      return 0
+    fi
+    sleep 2
+    elapsed=$((elapsed + 2))
+  done
+  if [ -z "$pattern" ]; then
+    tmux has-session -t "$tmux_name" 2>/dev/null && return 0
+  fi
+  return 1
+}
+
+# The child's project root is the worktree, so anything project-local (a plugin-shipped workflow
+# copied there by setup, a project's own .claude/agents/) must be reachable from there; the ordinator
+# plugin's own skills and agents are available regardless of cwd once the plugin is enabled. Tooling
+# is copied, not linked: this freezes it for the session and removes the last read outside the four
+# paths. Run again on --resume so a relaunched child picks up a harness fix made since first launch.
+sync_harness() {
+  [ -L "$WT/.claude" ] && rm -f "$WT/.claude"
+  rm -rf "$WT/.claude"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --exclude 'settings.local.json' --exclude '*.local.*' "$ROOT/.claude/" "$WT/.claude/"
+  else
+    cp -r "$ROOT/.claude" "$WT/.claude"
+    rm -f "$WT/.claude/settings.local.json"
+    find "$WT/.claude" -name '*.local.*' -delete
+  fi
+  local exclude; exclude="$(git -C "$WT" rev-parse --git-common-dir)/info/exclude"
+  grep -qx '.claude' "$exclude" 2>/dev/null || echo '.claude' >> "$exclude"
+  # The project's filled workflow reference travels with the harness too, at the fixed path the
+  # workflow's reference arg has always pointed to, so it is reachable inside the four-path boundary.
+  mkdir -p "$WT/.claude/workflows"
+  [ -f "$ROOT/.ordinator/REFERENCE.md" ] && cp "$ROOT/.ordinator/REFERENCE.md" "$WT/.claude/workflows/ticket-pr-reference.md"
+}
+
+[ -d "$WT" ] || { echo "worktree missing: $WT" >&2; exit 2; }
+if [ -z "$SMOKE" ]; then
+  [ -f "$HUB_PATH" ] || { echo "ticket hub missing: $HUB_PATH" >&2; exit 2; }
+fi
+[ -f "$FLEET_MD" ] || { echo "fleet record missing: $FLEET_MD" >&2; exit 2; }
+tmux has-session -t "$TMUX_NAME" 2>/dev/null && { echo "tmux session $TMUX_NAME already exists" >&2; exit 1; }
+
+if [ -n "$RESUME" ]; then
+  [ -f "$SDIR/handoff.md" ] || { echo "handoff missing, this ticket was never launched: $SDIR/handoff.md" >&2; exit 2; }
+  [ -f "$SDIR/settings.json" ] || { echo "settings missing, this ticket was never launched: $SDIR/settings.json" >&2; exit 2; }
+  ID="$RESUME_ID"
+  if [ -z "$ID" ]; then
+    ID=$(fleet_claude_id)
+    [ "$ID" != "not found" ] || { echo "no claude session id on the fleet row and none given; pass --resume <id>" >&2; exit 2; }
+  fi
+  sync_harness
+  CMD=(claude -n "$NAME" --resume "$ID" --settings "$SDIR/settings.json" --add-dir "$SDIR" --disallowedTools "$DISALLOWED")
+  CMD_STR=$(printf '%q ' "${CMD[@]}")
+  tmux new-session -d -s "$TMUX_NAME" -c "$WT" "$CMD_STR"
+  if poll_pane "$TMUX_NAME" "$LAUNCH_TIMEOUT"; then
+    set_fleet_state "resumed $(date +%H:%M)" "$ID"
+    echo "resumed tmux session $TMUX_NAME (claude session $NAME, --resume $ID) in $WT"
+  else
+    echo "resume failed: tmux session exited before staying up through --resume $ID; nothing to attach to; last pane lines:" >&2
+    printf '%s\n' "$LAST_PANE" | grep -v '^[[:space:]]*$' | tail -n 30 >&2
+    exit 5
+  fi
+  echo "attach with: tmux attach -t $TMUX_NAME"
+  exit 0
+fi
+
+MAX=$(behaviour max_concurrent_children); MAX=${MAX:-$(project_fact max_concurrent_children)}; MAX=${MAX:-2}
+CUTOFF=$(behaviour window_cutoff); CUTOFF=${CUTOFF:-$(project_fact window_cutoff)}; CUTOFF=${CUTOFF:-90}
+LIVE=$(tmux list-sessions -F '#S' 2>/dev/null | grep -c "^${SESSION_PREFIX}_impl--" || true)
+if [ "$LIVE" -ge "$MAX" ]; then
+  [ "$FORCE" = "--force" ] && echo "WARNING: $LIVE live children at cap $MAX; launching anyway (--force)" || { echo "HOLD: $LIVE live children, cap max_concurrent_children=$MAX" >&2; exit 3; }
+fi
+WINDOW=$(python3 "$HERE/ordinator-window-check" --cutoff "$CUTOFF" 2>&1 || true)
+STATUS=$(printf '%s' "$WINDOW" | jq -r '.status // "unknown"' 2>/dev/null); STATUS=${STATUS:-unknown}
+if [ "$STATUS" != "ok" ]; then
+  if [ "$FORCE" = "--force" ]; then echo "WARNING: window check $STATUS; launching anyway (--force): $WINDOW"
+  else echo "HOLD: window check $STATUS: $WINDOW" >&2; exit 3; fi
+fi
+
+mkdir -p "$SDIR"
+# ---- ticket hub: copied in since the child cannot read the project's hub directory ----
+if [ -z "$SMOKE" ]; then
+  mkdir -p "$SDIR/sources"
+  cp "$HUB_PATH" "$SDIR/sources/hub.md"
+fi
+sync_harness
+
+# ---- sources: fixed three (hub, decisions, confluence) plus any manifest entries ----
+# One manifest line per entry "<path>[:<from>-<to>] | settled|history"
+FIXED_SOURCES="- $SDIR/sources/hub.md | hub | copy of $HUB_PATH
+- $ROOT/$DECISIONS_DIR/ | settled | live, read only
+- $ROOT/$CONFLUENCE_DIR/ | documentation | live, read only, _archive excluded"
+MANIFEST_MD=""
+if [ -n "$SOURCES_FILE" ]; then
+  [ -f "$SOURCES_FILE" ] || { echo "sources manifest missing: $SOURCES_FILE" >&2; exit 2; }
+  mkdir -p "$SDIR/sources"
+  LINES=()
+  while IFS= read -r rawline || [ -n "$rawline" ]; do
+    line="$(printf '%s' "$rawline" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    [ -z "$line" ] && continue
+    spec="$(printf '%s' "${line%%|*}" | sed 's/[[:space:]]*$//')"
+    tag="$(printf '%s' "${line#*|}" | sed 's/^[[:space:]]*//')"
+    if [[ "$spec" =~ ^(.*):([0-9]+)-([0-9]+)$ ]]; then
+      src="${BASH_REMATCH[1]}"; from="${BASH_REMATCH[2]}"; to="${BASH_REMATCH[3]}"
+      base_name="$(basename "$src")"
+      dest="$SDIR/sources/${base_name}-${from}-${to}"
+      { echo "# origin: ${src}:${from}-${to}"; sed -n "${from},${to}p" "$src"; } > "$dest"
+      LINES+=("- $dest | $tag | origin ${src}:${from}-${to}")
+    elif [ -d "$spec" ]; then
+      src="$spec"
+      base_name="$(basename "$src")"
+      dest="$SDIR/sources/${base_name}"
+      cp -r "$src" "$dest"
+      LINES+=("- ${dest}/ | $tag | origin ${src}/ (directory, every file inside carries the tag)")
+    else
+      src="$spec"
+      base_name="$(basename "$src")"
+      dest="$SDIR/sources/${base_name}"
+      cp "$src" "$dest"
+      LINES+=("- $dest | $tag | origin $src")
+    fi
+  done < "$SOURCES_FILE"
+  MANIFEST_MD="$(printf '%s\n' "${LINES[@]}")"
+else
+  echo "no --sources manifest named; handoff sources are the fixed three (hub, decisions, confluence)" >&2
+fi
+SOURCES_MD="$FIXED_SOURCES"
+[ -n "$MANIFEST_MD" ] && SOURCES_MD="$SOURCES_MD
+$MANIFEST_MD"
+
+cat > "$SDIR/handoff.md" <<EOF
+# Handoff $KEY
+
+- ticket: $KEY
+- hub: $SDIR/sources/hub.md
+- reference: $WT/.claude/workflows/ticket-pr-reference.md
+- rulebookDir: $RULEBOOK_DIR
+- worktree: $WT
+- branch: $BRANCH
+- base: $BASE
+- fleet: $FLEET
+- orchestrator: $ORC
+- session: $NAME
+- session_dir: $SDIR
+- created: $TODAY
+- started_at: $(date -u +%FT%TZ)
+- window_at_launch: $WINDOW
+
+## Sources
+$SOURCES_MD
+
+## Review gates
+Two subagents this plugin ships are mandatory, not optional. Both take their rulebooks from $RULEBOOK_DIR in this worktree, never from another checkout. ordinator:code-reviewer after writing or changing any code: pass it code-comments.md, error-handling.md, logging.md and code-quality.md plus the plan or ticket document for the change. ordinator:architecture-reviewer on any new or changed architecture doc: pass it architecture-documentation.md and the decisions among the handoff sources. Both are report-only. Fix their findings and re-dispatch until they pass before presenting work as done.
+
+## Question contract
+Plan and Signatures may block: send \`QUESTION $KEY <stage>\` to $ORC and wait for \`RULING $KEY <stage>\`. Every other stage raises but never blocks; deferred questions ride in ENDED.
+The Scope step comes first and is interactive: send \`SCOPE $KEY\` and wait for the ruling.
+
+## Tail rule
+After the workflow returns PASS: push the branch, open a DRAFT PR with gh, write the URL into pr.md, send \`ENDED $KEY PASS\`, then idle. Never poll. Finish only on \`MERGED $KEY\` from $ORC or from the user in this pane. Corrections arrive as \`CORRECTION $KEY\`.
+
+## Limits
+If the API returns a usage-limit error mid-workflow, stay in this pane (interactive sessions wait for the window to reset), then resume the workflow with resumeFromRunId so finished stages replay from cache. Pass \`startedAt\` and \`usage\` args to the workflow so its usage.md ledger is complete.
+EOF
+
+# Four-path boundary, expressed as enumerated denies; the reasoning behind it lives in the project's
+# own architecture notes, named to the child through the decisions directory above.
+ALLOWED_PATHS=("$WT" "$SDIR" "$ROOT/$DECISIONS_DIR" "$ROOT/$CONFLUENCE_DIR")
+
+is_ancestor_or_equal() {
+  local e="$1" p="$2"
+  [ "$e" = "$p" ] && return 0
+  case "$p" in "$e"/*) return 0 ;; esac
+  return 1
+}
+
+PERM_LINES=()
+DENY_COUNT=0
+enum_level_denies() {
+  local level="$1"
+  [ -d "$level" ] || return 0
+  local e keep p
+  for e in "$level"/*; do
+    [ -e "$e" ] || continue
+    keep=""
+    for p in "${ALLOWED_PATHS[@]}"; do
+      is_ancestor_or_equal "$e" "$p" && { keep=1; break; }
+    done
+    [ -n "$keep" ] && continue
+    if [ -d "$e" ]; then
+      PERM_LINES+=("Read(//$e/**)" "Edit(//$e/**)" "Write(//$e/**)")
+    else
+      PERM_LINES+=("Read(//$e)" "Edit(//$e)" "Write(//$e)")
+    fi
+    DENY_COUNT=$((DENY_COUNT + 1))
+  done
+}
+
+# Levels: the parent chain below $HOME down to $ROOT, then the directories that need their own pass.
+# $HOME itself is not enumerated: it holds over a thousand entries, and reads outside the project
+# are left to the auto-mode classifier by ruling.
+LEVELS=()
+REL="${ROOT#"$HOME"/}"
+CUR="$HOME"
+IFS='/' read -ra ROOT_PARTS <<< "$REL"
+for p in "${ROOT_PARTS[@]}"; do
+  CUR="$CUR/$p"
+  LEVELS+=("$CUR")
+done
+# The decisions and confluence directories' own parent(s), so an unrelated sibling directory next to
+# either one is denied too.
+DECISIONS_PARENT=$(dirname "$ROOT/$DECISIONS_DIR")
+CONFLUENCE_PARENT=$(dirname "$ROOT/$CONFLUENCE_DIR")
+LEVELS+=("$DECISIONS_PARENT")
+[ "$CONFLUENCE_PARENT" != "$DECISIONS_PARENT" ] && LEVELS+=("$CONFLUENCE_PARENT")
+# The fleet directory's own ancestor chain within $ROOT, so a sibling fleet or unrelated directory at
+# any level between $ROOT and the fleet directory is denied, and the fleet directory itself, so
+# sibling session directories inside this same fleet are denied.
+FLEET_REL="${FLEET_DIR#"$ROOT"/}"
+CUR="$ROOT"
+IFS='/' read -ra FLEET_PARTS <<< "$FLEET_REL"
+for ((i = 0; i < ${#FLEET_PARTS[@]} - 1; i++)); do
+  CUR="$CUR/${FLEET_PARTS[$i]}"
+  LEVELS+=("$CUR")
+done
+LEVELS+=("$FLEET_DIR" "$ROOT/$WORKTREE_ROOT")
+
+for lvl in "${LEVELS[@]}"; do
+  enum_level_denies "$lvl"
+done
+echo "deny: $DENY_COUNT entries enumerated at launch across ${#LEVELS[@]} levels (blind to entries created later)" >&2
+
+# Read stays open on the decisions and confluence directories (they're allowed); Edit and Write do not.
+PERM_LINES+=("Edit(//$ROOT/$DECISIONS_DIR/**)" "Write(//$ROOT/$DECISIONS_DIR/**)")
+PERM_LINES+=("Edit(//$ROOT/$CONFLUENCE_DIR/**)" "Write(//$ROOT/$CONFLUENCE_DIR/**)")
+# _archive under confluence is fully closed even though confluence itself is live.
+PERM_LINES+=("Read(//$ROOT/$CONFLUENCE_DIR/**/_archive/**)" "Edit(//$ROOT/$CONFLUENCE_DIR/**/_archive/**)" "Write(//$ROOT/$CONFLUENCE_DIR/**/_archive/**)")
+# The copied tooling is read-only: the child must not edit its own frozen .claude.
+PERM_LINES+=("Edit(//$WT/.claude/**)" "Write(//$WT/.claude/**)")
+
+printf '%s\n' "${PERM_LINES[@]}" | jq -R . | jq -s . > "$SDIR/permdeny.json"
+
+jq -n \
+  --arg wt "$WT" \
+  --arg sdir "$SDIR" \
+  --arg home "$HOME" \
+  --arg archive "$ROOT/$CONFLUENCE_DIR/_archive" \
+  --arg decisions "$ROOT/$DECISIONS_DIR" \
+  --arg confluence "$ROOT/$CONFLUENCE_DIR" \
+  --arg rootclaude "$ROOT/CLAUDE.md" \
+  --slurpfile permdeny_file "$SDIR/permdeny.json" \
+  '($permdeny_file[0]) as $permdeny |
+   {
+     sandbox: {
+       enabled: true,
+       autoAllowBashIfSandboxed: false,
+       filesystem: { allowRead: [$wt, $sdir, $decisions, $confluence], allowWrite: [$wt, $sdir], denyRead: [$home, $archive] }
+     },
+     permissions: { deny: $permdeny },
+     claudeMdExcludes: [$rootclaude]
+   }' > "$SDIR/settings.json"
+
+if [ -n "$SMOKE" ]; then
+  cat > "$SDIR/scope.md" <<'EOF'
+# Scope SMOKE
+Throwaway environment check; not a real ticket.
+EOF
+  mkdir -p "$SDIR/sources"
+  cat > "$SDIR/sources/hub.md" <<'EOF'
+# SMOKE
+EOF
+  REF="$WT/.claude/workflows/ticket-pr-reference.md"
+  WF_ARGS="{ticket:'SMOKE', worktree:'$WT', branch:'$BRANCH', sessionDir:'$SDIR', scopePath:'$SDIR/scope.md', base:'$BASE', hub:'$SDIR/sources/hub.md', sources:[], reference:'$REF', rulebookDir:'$RULEBOOK_DIR', rulings:[], slice:'single', smoke:true}"
+
+  SIBLING_WT_EXAMPLE=""
+  for e in "$ROOT/$WORKTREE_ROOT"/*; do
+    [ -e "$e" ] || continue
+    [ "$e" = "$WT" ] && continue
+    SIBLING_WT_EXAMPLE="$e"
+    break
+  done
+  if [ -n "$SIBLING_WT_EXAMPLE" ]; then
+    SIBLING_CHECK_LINE="Attempt a Read of $SIBLING_WT_EXAMPLE (a sibling worktree under $ROOT/$WORKTREE_ROOT, not your own); expect refused."
+  else
+    SIBLING_CHECK_LINE="N/A: no sibling worktree exists under $ROOT/$WORKTREE_ROOT at launch time; report this check as N/A."
+  fi
+
+  DECISIONS_EXAMPLE=""
+  if [ -d "$ROOT/$DECISIONS_DIR" ]; then
+    DECISIONS_EXAMPLE=$(find "$ROOT/$DECISIONS_DIR" -type f 2>/dev/null | head -1)
+  fi
+  if [ -n "$DECISIONS_EXAMPLE" ]; then
+    DECISIONS_LINE="Attempt a Read of $DECISIONS_EXAMPLE (a file under the decisions directory); expect allowed."
+  else
+    DECISIONS_LINE="N/A: no file exists under $ROOT/$DECISIONS_DIR/ at launch time; report this check as N/A."
+  fi
+
+  CONFLUENCE_LIVE_EXAMPLE=""
+  CONFLUENCE_ARCHIVE_EXAMPLE=""
+  if [ -d "$ROOT/$CONFLUENCE_DIR" ]; then
+    CONFLUENCE_LIVE_EXAMPLE=$(find "$ROOT/$CONFLUENCE_DIR" -type f -not -path '*/_archive/*' 2>/dev/null | head -1)
+    CONFLUENCE_ARCHIVE_EXAMPLE=$(find "$ROOT/$CONFLUENCE_DIR" -type f -path '*/_archive/*' 2>/dev/null | head -1)
+  fi
+  if [ -n "$CONFLUENCE_LIVE_EXAMPLE" ]; then
+    CONFLUENCE_LIVE_LINE="Attempt a Read of $CONFLUENCE_LIVE_EXAMPLE (a live confluence file, not under _archive); expect allowed."
+  else
+    CONFLUENCE_LIVE_LINE="N/A: no file exists under $ROOT/$CONFLUENCE_DIR/ outside _archive at launch time; report this check as N/A."
+  fi
+  if [ -n "$CONFLUENCE_ARCHIVE_EXAMPLE" ]; then
+    CONFLUENCE_ARCHIVE_LINE="Attempt a Read of $CONFLUENCE_ARCHIVE_EXAMPLE (an archived confluence file); expect refused."
+    SHELL_ARCHIVE_LINE="Run shell: cat $CONFLUENCE_ARCHIVE_EXAMPLE; expect Permission denied."
+  else
+    CONFLUENCE_ARCHIVE_LINE="N/A: no file exists under $ROOT/$CONFLUENCE_DIR/_archive/ at launch time; report this check as N/A."
+    SHELL_ARCHIVE_LINE="N/A: no archived confluence file exists at launch time; report this check as N/A."
+  fi
+
+  HUB_DIR_REL=$(dirname "$HUB_REL")
+  ROOT_FILE_EXAMPLE=$(find "$ROOT" -maxdepth 1 -type f -not -name '.*' 2>/dev/null | head -1)
+  if [ -n "$ROOT_FILE_EXAMPLE" ]; then
+    ROOT_FILE_LINE="Attempt a Read of $ROOT_FILE_EXAMPLE (a file directly under the project root, outside the four paths); expect refused."
+  else
+    ROOT_FILE_LINE="N/A: no plain file exists directly under $ROOT at launch time; report this check as N/A."
+  fi
+
+  ROOT_CLAUDE_LINE="N/A: no $ROOT/CLAUDE.md exists at launch time; report this check as N/A."
+  if [ -f "$ROOT/CLAUDE.md" ]; then
+    ROOT_CLAUDE_PHRASE=$(grep -m1 -v '^[[:space:]]*$' "$ROOT/CLAUDE.md" | sed 's/^#*[[:space:]]*//')
+    [ -n "$ROOT_CLAUDE_PHRASE" ] && ROOT_CLAUDE_LINE="Report whether your loaded instructions contain the line \"$ROOT_CLAUDE_PHRASE\" (expected absent, since it is excluded via claudeMdExcludes)"
+  fi
+
+  source "$HERE/ordinator-find-clone"
+  CLONE=$(find_clone "$ROOT")
+
+  PROMPT="Environment check, not a real ticket. Do each step in order, note each result, then stop.
+1. Load Skill(implement) (do not follow it); note loaded or unknown.
+2. Dispatch an Agent of type code-scout with the question: which file in this worktree is named README.md; answer with the path.
+3. Confirm .claude/workflows/ticket-pr.js exists relative to your working directory.
+4. Invoke Workflow name ticket-pr with args $WF_ARGS; note whether it returned.
+5. $DECISIONS_LINE
+6. $CONFLUENCE_LIVE_LINE
+7. $CONFLUENCE_ARCHIVE_LINE
+8. Attempt a Read of $ROOT/$HUB_DIR_REL/ (a directory listing) or any file inside it; expect refused.
+9. $ROOT_FILE_LINE
+10. Attempt a Read of $CLONE/README.md; expect refused.
+11. $SIBLING_CHECK_LINE
+12. Attempt a Read of $FLEET_DIR/orchestrator.md; expect refused.
+13. Attempt a Write of $ROOT/$DECISIONS_DIR/smoke-probe.md; note refused or allowed.
+14. Attempt a Write of $SDIR/probe.md; note allowed or refused.
+15. $SHELL_ARCHIVE_LINE
+16. Run shell: cat $HOME/.gitconfig; expect Permission denied.
+17. Attempt a Read of $HOME/.gitconfig via the Read tool; report allowed or refused (informational only, no expected value).
+18. Confirm $WT/.claude is a directory and not a symlink; report both checks.
+19. $ROOT_CLAUDE_LINE and, separately, whether $SDIR/handoff.md contains a section headed \"## Review gates\" (expected present; read the file, it is not auto-loaded).
+20. Send one message to $ORC whose first line is SMOKE $KEY, followed by one line per check formatted 'check: PASS|FAIL detail'. Then stop."
+else
+  PROMPT="Run the implement skill. Handoff: $SDIR/handoff.md"
+fi
+
+if [ -z "$SMOKE" ]; then
+  printf '| %s | %s | %s | %s | %s | %s | launching | - | live | - |\n' "$NAME" "$KEY" "$WT" "$BRANCH" "$BASE" "$TODAY" >> "$FLEET_MD"
+fi
+
+CMD=(claude -n "$NAME" --settings "$SDIR/settings.json" --add-dir "$SDIR" --disallowedTools "$DISALLOWED" -- "$PROMPT")
+CMD_STR=$(printf '%q ' "${CMD[@]}")
+tmux new-session -d -s "$TMUX_NAME" -c "$WT" "$CMD_STR"
+
+if ! poll_pane "$TMUX_NAME" "$LAUNCH_TIMEOUT" "Successfully loaded skill"; then
+  tmux kill-session -t "$TMUX_NAME" 2>/dev/null || true
+  [ -z "$SMOKE" ] && delete_fleet_row
+  echo "launch timed out after ${LAUNCH_TIMEOUT}s waiting for skill load; last pane lines:" >&2
+  printf '%s\n' "$LAST_PANE" | grep -v '^[[:space:]]*$' | tail -n 30 >&2
+  exit 5
+fi
+
+if [ -n "$SMOKE" ]; then
+  echo "smoke tmux session $TMUX_NAME (claude session $NAME) launched in $WT"
+else
+  # Claude session id: the stem of the newest transcript under the worktree's project directory, recorded
+  # on the fleet row now so a later --resume can find it without the id being typed in by hand.
+  SLUG=$(find_transcript_dir "$WT")
+  CLAUDE_ID="not found"
+  if [ -n "$SLUG" ]; then
+    JSONL=$(ls -t "$HOME/.claude/projects/$SLUG"/*.jsonl 2>/dev/null | head -1 || true)
+    [ -n "$JSONL" ] && CLAUDE_ID=$(basename "$JSONL" .jsonl)
+  fi
+  set_fleet_state "launched" "$CLAUDE_ID"
+  echo "started tmux session $TMUX_NAME (claude session $NAME) in $WT (live children now $((LIVE + 1)) of $MAX; window: $STATUS)"
+fi
+echo "attach with: tmux attach -t $TMUX_NAME"

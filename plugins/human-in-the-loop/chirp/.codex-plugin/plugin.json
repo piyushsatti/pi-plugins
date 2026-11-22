@@ -1,0 +1,11 @@
+{
+  "name": "chirp",
+  "version": "2026.11.17",
+  "description": "Speak a concise local outline after the original agent appends a speech marker.",
+  "hooks": "./hooks/codex.json",
+  "license": "MIT",
+  "author": {
+    "name": "piyushsatti",
+    "email": "49362334+piyushsatti@users.noreply.github.com"
+  }
+}

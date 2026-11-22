@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manifold: Help"
+  short_description: "Diagnose a Manifold problem and find the next step."
+  default_prompt: "Use $help to diagnose where I am stuck with Manifold."
+policy:
+  allow_implicit_invocation: true

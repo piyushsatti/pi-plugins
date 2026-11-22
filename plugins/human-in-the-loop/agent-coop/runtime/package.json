@@ -1,0 +1,33 @@
+{
+  "name": "agent-coop",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run scripts/dev.ts",
+    "build": "bun run scripts/build.ts",
+    "db:reset": "bun run scripts/db-reset.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "qa": "d=$(mktemp -d) && AGENT_COOP_DB=$d/agent-coop.sqlite AGENT_COOP_DATA_DIR=$d/data AGENT_COOP_ARTIFACTS_DIR=$d/artifacts AGENT_COOP_BACKUP_DIR=$d/backup bun run tests/qa/render-qa.ts --shots $d/shots"
+  },
+  "dependencies": {
+    "@codemirror/lang-markdown": "^6.3.0",
+    "@codemirror/state": "^6.5.0",
+    "@codemirror/view": "^6.36.0",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "kokoro-js": "^1.2.1",
+    "markdown-it": "^14.1.0",
+    "mermaid": "^11.4.0",
+    "yjs": "^13.6.20",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^20.11.1",
+    "@types/bun": "^1.2.0",
+    "@types/markdown-it": "^14.1.2",
+    "esbuild": "^0.24.0",
+    "playwright": "^1.62.0",
+    "typescript": "^7.0.2"
+  }
+}

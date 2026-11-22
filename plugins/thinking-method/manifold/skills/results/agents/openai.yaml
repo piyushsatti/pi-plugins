@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manifold: Interpret supplied results"
+  short_description: "Interpret supplied results with attributed context and scoped conclusions."
+  default_prompt: "Use Manifold to interpret supplied results using the supplied context."
+policy:
+  allow_implicit_invocation: true

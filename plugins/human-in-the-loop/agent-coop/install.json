@@ -1,0 +1,13 @@
+{
+  "files": [
+    {"src": "bin/agent-coop", "dest": "~/.local/bin/agent-coop-mcp", "mode": "0755"},
+    {"src": "bin/agent-coop", "dest": "~/.local/bin/agent-coop-up", "mode": "0755"},
+    {"src": "bin/agent-coop", "dest": "~/.local/bin/agent-coop-watch", "mode": "0755"}
+  ],
+  "builds": [
+    {
+      "build": "mkdir -p ~/.local/share/agent-coop/runtime && rsync -a --delete --exclude node_modules/ --exclude web/dist/ runtime/ ~/.local/share/agent-coop/runtime/ && bun install --cwd ~/.local/share/agent-coop/runtime --frozen-lockfile",
+      "dest": "~/.local/share/agent-coop/runtime"
+    }
+  ]
+}

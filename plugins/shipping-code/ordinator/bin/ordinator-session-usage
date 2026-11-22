@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# ordinator-session-usage <session-cwd> [session-id]
+# Finds the Claude Code transcripts for a session that ran in <session-cwd> (its main JSONL plus every subagent and
+# workflow agent JSONL under its directory) and prints the usage report in markdown. Reads only; costs the session nothing.
+# Without a session id the newest session in that project directory is used. Every location it expected and did not find
+# is printed as a "gap:" line so a missing report is never mistaken for an empty one.
+set -uo pipefail
+CWD=${1:?session cwd required}
+SID=${2:-}
+HERE=$(cd "$(dirname "$0")" && pwd)
+PROJ="$HOME/.claude/projects/$(printf '%s' "$CWD" | sed 's#[/_.]#-#g')"
+[ -d "$PROJ" ] || { echo "gap: no project transcript dir at $PROJ (cwd slug mismatch or session never started)"; exit 4; }
+if [ -z "$SID" ]; then
+  MAIN=$(ls -t "$PROJ"/*.jsonl 2>/dev/null | head -1)
+  [ -n "$MAIN" ] || { echo "gap: no session transcripts in $PROJ"; exit 4; }
+  SID=$(basename "$MAIN" .jsonl)
+else
+  MAIN="$PROJ/$SID.jsonl"
+  [ -f "$MAIN" ] || { echo "gap: no transcript $MAIN"; exit 4; }
+fi
+FILES=("$MAIN")
+if [ -d "$PROJ/$SID/subagents" ]; then
+  while IFS= read -r f; do FILES+=("$f"); done < <(find "$PROJ/$SID/subagents" -name '*.jsonl' | sort)
+else
+  echo "gap: no subagents dir under $PROJ/$SID (session dispatched no subagents, or the harness stores them elsewhere)"
+fi
+WF=$(find "$PROJ/$SID" -type d -name 'wf_*' 2>/dev/null | sort)
+if [ -n "$WF" ]; then
+  while IFS= read -r d; do while IFS= read -r f; do FILES+=("$f"); done < <(find "$d" -name 'agent-*.jsonl' | sort); done <<< "$WF"
+else
+  echo "gap: no workflow run dirs (wf_*) under $PROJ/$SID; if a Workflow ran, its agent transcripts were not found here"
+fi
+echo "session: $SID"
+echo "transcripts: ${#FILES[@]}"
+echo
+python3 "$HERE/ordinator-usage-report" "${FILES[@]}" --md

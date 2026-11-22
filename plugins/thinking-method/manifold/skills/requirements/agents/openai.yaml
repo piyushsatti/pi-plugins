@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manifold: Form requirements"
+  short_description: "Form requirements with attributed context and scoped conclusions."
+  default_prompt: "Use Manifold to form requirements using the supplied context."
+policy:
+  allow_implicit_invocation: true

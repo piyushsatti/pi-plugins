@@ -1,0 +1,51 @@
+{
+  "_comment": "The operations remote-tools allows. The gate on each host reads its copy at /etc/remote-tools/ops.json; the MCP server reads ~/.local/share/remote-tools/ops.json. Over ssh an operation is sent as its name then key=value pairs, for example `docker-logs container=web lines=200`. Each run entry is one argv, run without a shell; a {\"param\": ...} item is replaced by that parameter's value, and one with \"flag\" adds the flag before it, or nothing when the parameter is left out.",
+  "ops": {
+    "docker-ps": {
+      "description": "List every container on the host, running or not, one JSON object per line with only ID, Names, Image, State and Status. Commands and labels are omitted because they can hold secrets.",
+      "params": {},
+      "run": [["docker", "ps", "--all", "--format", "{\"ID\":{{json .ID}},\"Names\":{{json .Names}},\"Image\":{{json .Image}},\"State\":{{json .State}},\"Status\":{{json .Status}}}"]]
+    },
+    "docker-inspect": {
+      "description": "Show one container's state (status, health, exit code, start and finish times). Only .State, never the environment, which often holds secrets.",
+      "params": {
+        "container": {"type": "text", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$", "description": "Container name or id."}
+      },
+      "run": [["docker", "inspect", "--format", "{{json .State}}", "--", {"param": "container"}]]
+    },
+    "docker-logs": {
+      "description": "Show the last lines of one container's logs.",
+      "params": {
+        "container": {"type": "text", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$", "description": "Container name or id."},
+        "lines": {"type": "int", "min": 1, "max": 5000, "default": 200, "description": "How many lines from the end."},
+        "since": {"type": "text", "pattern": "^[0-9]{1,6}[smhd]$", "optional": true, "description": "Only logs newer than this, such as 30m or 2h."}
+      },
+      "run": [["docker", "logs", "--tail", {"param": "lines"}, {"param": "since", "flag": "--since"}, "--", {"param": "container"}]]
+    },
+    "service-status": {
+      "description": "Show one systemd unit's status: whether it is active, since when, and its main process.",
+      "params": {
+        "unit": {"type": "text", "pattern": "^[A-Za-z0-9][A-Za-z0-9@._-]{0,127}$", "description": "Unit name, such as nginx or nginx.service."}
+      },
+      "run": [["systemctl", "status", "--no-pager", "--lines=0", "--", {"param": "unit"}]]
+    },
+    "service-logs": {
+      "description": "Show the last journal lines of one systemd unit.",
+      "params": {
+        "unit": {"type": "text", "pattern": "^[A-Za-z0-9][A-Za-z0-9@._-]{0,127}$", "description": "Unit name, such as nginx or nginx.service."},
+        "lines": {"type": "int", "min": 1, "max": 5000, "default": 200, "description": "How many lines from the end."}
+      },
+      "run": [["journalctl", "--no-pager", "--lines", {"param": "lines"}, "--unit", {"param": "unit"}]]
+    },
+    "host-health": {
+      "description": "Uptime and load, disk use, memory use, and processes sorted by CPU.",
+      "params": {},
+      "run": [
+        ["uptime"],
+        ["df", "-h"],
+        ["free", "-h"],
+        ["ps", "-eo", "pid,user,%cpu,%mem,etime,comm", "--sort=-%cpu"]
+      ]
+    }
+  }
+}

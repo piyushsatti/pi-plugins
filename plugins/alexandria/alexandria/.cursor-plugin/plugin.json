@@ -1,0 +1,11 @@
+{
+  "name": "alexandria",
+  "version": "2026.11.17",
+  "description": "Search a knowledge library from your agent: a local folder mode that indexes the project folders you choose, and a server that serves one committed revision of a Markdown library, locally or hosted",
+  "author": {
+    "name": "piyushsatti",
+    "email": "49362334+piyushsatti@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "mcpServers": "./mcp.json"
+}

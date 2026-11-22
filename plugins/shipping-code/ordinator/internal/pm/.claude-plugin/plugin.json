@@ -1,0 +1,21 @@
+{
+  "name": "pm",
+  "version": "2026.10.05",
+  "description": "Plan manager: an approved plan goes to an implementer subagent with a brief of the conversation, while the main conversation carries on with its context whole; steps tracked in the footer, then verified; /pm:on, /pm:off, /pm:status, /pm:config, /pm:send, /pm:steer, /pm:stop, /pm:brief, /pm:report",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "model": {
+      "type": "string",
+      "title": "Implementer model",
+      "description": "The model the implementer and verifier run on: an alias (sonnet, opus) or a full id",
+      "default": "sonnet"
+    },
+    "effort": {
+      "type": "string",
+      "title": "Implementer effort",
+      "description": "How hard the implementer and verifier think",
+      "options": ["low", "medium", "high", "xhigh", "max"],
+      "default": "high"
+    }
+  }
+}

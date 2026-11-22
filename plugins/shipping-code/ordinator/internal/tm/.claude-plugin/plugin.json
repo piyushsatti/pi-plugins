@@ -1,0 +1,6 @@
+{
+  "name": "tm",
+  "version": "2026.10.05",
+  "description": "Task manager: a task list per project that survives restarts, compaction and new sessions; a ready queue from dependencies, a done check the model cannot edit, one-step capture of side work, a next-step note and decision log, a needs-you queue; drawn in the band above the prompt; /tm, /tm:add, /tm:next, /tm:done, /tm:block, /tm:note, /tm:list, /tm:import",
+  "types": "./types/index.d.ts"
+}

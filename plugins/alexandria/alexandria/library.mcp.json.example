@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "library": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "exec \"$HOME/.local/share/alexandria/.venv/bin/alexandria\" serve --data \"$ALEXANDRIA_DATA\""
+      ],
+      "env": {
+        "ALEXANDRIA_DATA": "/absolute/path/to/a/data/block"
+      }
+    },
+    "library-hosted": {
+      "type": "http",
+      "url": "https://your-alexandria-host.example/mcp"
+    }
+  }
+}

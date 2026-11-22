@@ -1,0 +1,1 @@
+{"files": [{"src": "bin/remote-tools", "dest": "~/.local/bin/remote-tools", "mode": "0755"}, {"src": "ops.json", "dest": "~/.local/share/remote-tools/ops.json", "mode": "0644"}]}

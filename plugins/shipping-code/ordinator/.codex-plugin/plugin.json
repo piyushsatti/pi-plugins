@@ -1,0 +1,31 @@
+{
+  "name": "ordinator",
+  "version": "2026.10.22",
+  "description": "Execution orchestration for a fleet of implementation sessions: one orchestrator skill that launches, relays and records; one implementation skill per ticket that plans, builds, reviews and opens a draft PR through the ticket-pr workflow; eleven stage agents with narrow tool surfaces. Configured per project by the setup skill.",
+  "author": {
+    "name": "piyushsatti",
+    "email": "49362334+piyushsatti@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "orchestration",
+    "workflow",
+    "fleet",
+    "code-review",
+    "pull-request"
+  ],
+  "skills": [
+    "./skills"
+  ],
+  "interface": {
+    "displayName": "Ordinator",
+    "shortDescription": "Orchestrate a fleet of ticket-to-PR sessions",
+    "developerName": "piyushsatti",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ]
+  }
+}

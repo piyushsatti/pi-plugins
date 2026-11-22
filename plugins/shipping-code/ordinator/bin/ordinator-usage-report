@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+"""Summarise Claude Code agent transcripts (JSONL) into a usage report.
+
+Per transcript: tokens, wall time, tool calls by tool (count, result bytes, latency, failures with reasons), compactions,
+peak context with a redesign flag, what the context was made of, and the gaps: every field the script expected and did not find.
+
+Usage: ordinator-usage-report <transcript.jsonl | directory>... [--md] [--limit N]
+Reads only harness-written records, so it costs the agents nothing. Directories are scanned for *.jsonl.
+"""
+
+import collections
+import json
+import pathlib
+import sys
+from datetime import datetime
+
+TOKEN_KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")
+CONTEXT_KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
+SETTINGS = pathlib.Path.home() / ".claude/settings.json"
+FALLBACK_LIMIT = 256_000
+REASON_CHARS = 100
+TOP_REASONS = 3
+
+
+def ts(s: str) -> datetime:
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+
+
+def size(payload) -> int:
+    return len(payload if isinstance(payload, str) else json.dumps(payload))
+
+
+def reason_of(block: dict) -> str:
+    text = block.get("content")
+    if not isinstance(text, str):
+        text = " ".join(b.get("text", "") for b in text if isinstance(b, dict)) if isinstance(text, list) else json.dumps(text)
+    return " ".join(text.split())[:REASON_CHARS] or "(empty error)"
+
+
+def context_limit() -> tuple[int, str]:
+    """The autocompact window from settings is the real ceiling for one unit of work; the model window (1M) is not."""
+    try:
+        value = json.loads(SETTINGS.read_text()).get("autoCompactWindow")
+        if value:
+            return int(value), f"autoCompactWindow in {SETTINGS}"
+    except (OSError, json.JSONDecodeError):
+        pass
+    return FALLBACK_LIMIT, f"fallback (autoCompactWindow not found in {SETTINGS})"
+
+
+def summarise(path: pathlib.Path, limit: int, limit_source: str = "--limit") -> dict:
+    tokens = collections.Counter()
+    calls = collections.Counter()
+    result_bytes = collections.Counter()
+    latency = collections.defaultdict(float)
+    errors = collections.defaultdict(collections.Counter)
+    composition = collections.Counter()
+    gaps = collections.Counter()
+    compactions = []
+    compact_summaries = thinking_blocks = thinking_redacted = 0
+    notes = []
+    pending = {}
+    first = last = None
+    peak = {"tokens": 0, "requestId": None}
+    # One API response is written as several records, one per content block, each carrying the usage as of that block
+    # (output_tokens grows across them), so keep the maximum per request and sum across requests at the end.
+    per_request = collections.defaultdict(collections.Counter)
+    request_order = []
+    lines = path.read_text().splitlines()
+    for line in lines:
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            gaps["undecodable lines"] += 1
+            continue
+        kind = rec.get("type")
+        t = rec.get("timestamp")
+        if t:
+            first = first or t
+            last = t
+        elif kind in ("assistant", "user"):
+            gaps["message records without timestamp"] += 1
+        msg = rec.get("message") or {}
+        content = msg.get("content") or []
+        if kind == "assistant":
+            req = rec.get("requestId")
+            if not req:
+                gaps["assistant records without requestId (uuid used)"] += 1
+                req = rec.get("uuid")
+            usage = msg.get("usage")
+            if not usage:
+                gaps["assistant records without usage"] += 1
+            else:
+                if req not in per_request:
+                    request_order.append(req)
+                for k in TOKEN_KEYS:
+                    per_request[req][k] = max(per_request[req][k], usage.get(k, 0))
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                bt = block.get("type")
+                if bt == "tool_use":
+                    calls[block["name"]] += 1
+                    pending[block["id"]] = (block["name"], t)
+                    composition["tool inputs (assistant)"] += size(block.get("input"))
+                elif bt == "text":
+                    composition["assistant text"] += len(block.get("text", ""))
+                elif bt == "thinking":
+                    n = len(block.get("thinking") or "")
+                    composition["thinking (visible text only)"] += n
+                    thinking_blocks += 1
+                    thinking_redacted += n == 0
+        elif kind == "user":
+            if rec.get("isCompactSummary"):
+                compact_summaries += 1
+                composition["compaction summaries"] += size(content)
+                continue
+            if isinstance(content, str):
+                composition["user text"] += len(content)
+                continue
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "tool_result":
+                    name, started = pending.pop(block.get("tool_use_id"), (None, None))
+                    if name is None:
+                        gaps["tool_results with no matching tool_use"] += 1
+                        continue
+                    n = size(block.get("content"))
+                    result_bytes[name] += n
+                    composition["tool results"] += n
+                    if started and t:
+                        latency[name] += (ts(t) - ts(started)).total_seconds()
+                    else:
+                        gaps["tool_results without timing"] += 1
+                    if block.get("is_error"):
+                        errors[name][reason_of(block)] += 1
+                elif block.get("type") == "text":
+                    composition["user text"] += len(block.get("text", ""))
+        elif kind == "system" and rec.get("subtype") == "compact_boundary":
+            meta = rec.get("compactMetadata") or {}
+            if not meta:
+                gaps["compact_boundary records without compactMetadata"] += 1
+            compactions.append({"trigger": meta.get("trigger"), "preTokens": meta.get("preTokens"), "postTokens": meta.get("postTokens"), "at": t})
+        elif kind == "attachment":
+            composition["harness attachments (reminders, hooks, listings)"] += size(rec.get("attachment"))
+    if pending:
+        gaps["tool_uses never answered"] += len(pending)
+    if not lines:
+        gaps["empty transcript"] += 1
+    if not per_request:
+        gaps["no assistant usage at all"] += 1
+    if compact_summaries != len(compactions):
+        notes.append(f"compaction markers disagree: {len(compactions)} boundaries vs {compact_summaries} summaries")
+    if thinking_redacted:
+        notes.append(f"thinking text redacted in {thinking_redacted} of {thinking_blocks} blocks; thinking cost is only visible inside output tokens")
+    for req in request_order:
+        u = per_request[req]
+        tokens.update(u)
+        ctx = sum(u[k] for k in CONTEXT_KEYS)
+        if ctx > peak["tokens"]:
+            peak = {"tokens": ctx, "requestId": req}
+    final_ctx = sum(per_request[request_order[-1]][k] for k in CONTEXT_KEYS) if request_order else 0
+    wall = (ts(last) - ts(first)).total_seconds() if first and last else 0.0
+    total_bytes = sum(composition.values()) or 1
+    return {
+        "file": path.name,
+        "wall_s": round(wall, 1),
+        "turns": len(request_order),
+        "tokens": dict(tokens),
+        "context": {
+            "peak_tokens": peak["tokens"],
+            "peak_requestId": peak["requestId"],
+            "final_tokens": final_ctx,
+            "limit": limit,
+            "limit_source": limit_source,
+            "over_limit": peak["tokens"] > limit,
+            "compactions": compactions,
+        },
+        "composition": {k: {"bytes": v, "approx_tokens": v // 4, "share_pct": round(100 * v / total_bytes, 1)} for k, v in composition.most_common()},
+        "tools": {
+            n: {
+                "calls": c,
+                "result_bytes": result_bytes[n],
+                "latency_s": round(latency[n], 1),
+                "failed": sum(errors[n].values()),
+                "reasons": [f"{k} ({v}x)" for k, v in errors[n].most_common(TOP_REASONS)],
+            }
+            for n, c in sorted(calls.items())
+        },
+        "gaps": [f"{k}: {v}" for k, v in sorted(gaps.items())] + notes,
+    }
+
+
+def markdown(reports: list[dict]) -> str:
+    out = [
+        "| agent | wall s | turns | input | cache write | cache read | output | peak context | compactions | flag |",
+        "|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for r in reports:
+        k, c = r["tokens"], r["context"]
+        flag = f"OVER autocompact window {c['limit']}: redesign the unit of work" if c["over_limit"] else ""
+        out.append(
+            f"| {r['file']} | {r['wall_s']} | {r['turns']} | {k.get('input_tokens', 0)} | {k.get('cache_creation_input_tokens', 0)} | {k.get('cache_read_input_tokens', 0)} | {k.get('output_tokens', 0)} | {c['peak_tokens']} | {len(c['compactions'])} | {flag} |"
+        )
+    tools = collections.defaultdict(collections.Counter)
+    reasons = collections.defaultdict(list)
+    for r in reports:
+        for n, v in r["tools"].items():
+            tools[n]["calls"] += v["calls"]
+            tools[n]["result_bytes"] += v["result_bytes"]
+            tools[n]["latency_s"] += v["latency_s"]
+            tools[n]["failed"] += v["failed"]
+            reasons[n] += v["reasons"]
+    out += ["", "| tool | calls | failed | result bytes | approx result tokens | total latency s | top failure reasons |", "|---|---|---|---|---|---|---|"]
+    for n, v in sorted(tools.items()):
+        out.append(
+            f"| {n} | {v['calls']} | {v['failed']} | {v['result_bytes']} | {v['result_bytes'] // 4} | {round(v['latency_s'], 1)} | {'; '.join(reasons[n][:TOP_REASONS])} |"
+        )
+    for r in reports:
+        out += [
+            "",
+            f"### {r['file']}: context composition (bytes seen in the transcript, approx tokens = bytes / 4)",
+            "| source | bytes | approx tokens | share |",
+            "|---|---|---|---|",
+        ]
+        out += [f"| {k} | {v['bytes']} | {v['approx_tokens']} | {v['share_pct']}% |" for k, v in r["composition"].items()]
+        for c in r["context"]["compactions"]:
+            out.append(f"- compaction ({c['trigger']}) at {c['at']}: {c['preTokens']} -> {c['postTokens']} tokens")
+        out.append(
+            f"- context ceiling: {r['context']['limit']} tokens ({r['context']['limit_source']}); peak {r['context']['peak_tokens']}, final {r['context']['final_tokens']}"
+        )
+        out.append("- gaps: " + ("; ".join(r["gaps"]) if r["gaps"] else "none"))
+    return "\n".join(out)
+
+
+if __name__ == "__main__":
+    argv = sys.argv[1:]
+    limit, source = (int(argv.pop(argv.index("--limit") + 1)), "--limit") if "--limit" in argv else context_limit()
+    args = [a for a in argv if a not in ("--md", "--limit")]
+    files = [p for a in args for p in (sorted(pathlib.Path(a).glob("*.jsonl")) if pathlib.Path(a).is_dir() else [pathlib.Path(a)])]
+    reports = [summarise(p, limit, source) for p in files]
+    print(markdown(reports) if "--md" in argv else json.dumps(reports, indent=2))

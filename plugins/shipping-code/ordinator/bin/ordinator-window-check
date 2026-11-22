@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Decide whether there is usage-window headroom to launch or resume work.
+
+Reads the sidecar written by ~/.claude/rate-limits-sidecar.sh (default
+~/.local/state/claude/rate-limits.json) and prints one JSON object with status ok, hold, or unknown.
+Exit 0 = ok, 3 = hold (a window is at or past the cutoff; resume_at says when it resets), 4 = unknown (no sidecar, stale sidecar, or fields missing).
+Unknown is reported, never treated as ok: the caller decides whether to proceed blind.
+
+Usage: ordinator-window-check [--cutoff 90] [--stale-min 15] [--file PATH]
+"""
+
+import json
+import os
+import pathlib
+import sys
+from datetime import datetime, timedelta, timezone
+
+DEFAULT_FILE = pathlib.Path.home() / ".local/state/claude/rate-limits.json"
+
+
+def main(argv: list[str]) -> int:
+    cutoff = float(argv[argv.index("--cutoff") + 1]) if "--cutoff" in argv else 90.0
+    stale_min = float(argv[argv.index("--stale-min") + 1]) if "--stale-min" in argv else 15.0
+    path = pathlib.Path(argv[argv.index("--file") + 1]) if "--file" in argv else pathlib.Path(os.environ.get("CLAUDE_RATE_LIMITS_FILE", DEFAULT_FILE))
+    out = {"status": "unknown", "cutoff": cutoff, "file": str(path), "gaps": []}
+    if not path.exists():
+        out["gaps"].append("sidecar file missing: the status line is not writing it (statusLine unset, or wrapper not configured)")
+        return finish(out)
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        out["gaps"].append("sidecar file is not valid JSON")
+        return finish(out)
+    now = datetime.now(timezone.utc)
+    written = data.get("written_at")
+    if not written:
+        out["gaps"].append("written_at missing")
+    else:
+        age = now - datetime.fromisoformat(written.replace("Z", "+00:00"))
+        out["age_min"] = round(age.total_seconds() / 60, 1)
+        if age > timedelta(minutes=stale_min):
+            out["gaps"].append(f"sidecar is {out['age_min']} min old (stale after {stale_min}); no session has refreshed its status line")
+    worst = None
+    for window in ("five_hour", "seven_day"):
+        w = data.get(window)
+        if not w or w.get("used_percentage") is None:
+            out["gaps"].append(f"{window} missing from sidecar (the harness broadcasts it only on subscription plans)")
+            continue
+        used = float(w["used_percentage"])
+        resets = w.get("resets_at")
+        out[window] = {"used_pct": used, "resets_at": datetime.fromtimestamp(resets, timezone.utc).isoformat() if resets else None}
+        if used >= cutoff and (worst is None or used > worst[0]):
+            worst = (used, window, out[window]["resets_at"])
+    if out["gaps"]:
+        return finish(out)
+    if worst:
+        out.update(status="hold", reason=f"{worst[1]} at {worst[0]}% (cutoff {cutoff}%)", resume_at=worst[2])
+    else:
+        out["status"] = "ok"
+    return finish(out)
+
+
+def finish(out: dict) -> int:
+    print(json.dumps(out))
+    return {"ok": 0, "hold": 3}.get(out["status"], 4)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

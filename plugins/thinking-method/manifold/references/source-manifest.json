@@ -1,0 +1,677 @@
+{
+  "collection": "Knowledge/standards/manifold",
+  "sourceRevision": "dde7a3286b781bf0f700a790e4246ff45c8fb0dd",
+  "dirtyState": [
+    "?? standards/manifold/"
+  ],
+  "importedAt": "2026-09-27T18:50:13.309Z",
+  "revisionLimit": "HEAD is context only. Per-file hashes identify the imported working-tree contents, including untracked files. No Manifold release exists.",
+  "license": "MIT",
+  "licenseSha256": "359bd333048498e21c0c858b554721927e916e20bf2e0d6119753d4315a1171c",
+  "selectionSha256": "48c0ef8c5b8d03eda07f140bac541a2b9b4ca7addd0d98f20e765b5423eebdf9",
+  "files": [
+    {
+      "path": "standard/foundations/purpose-and-scope.md",
+      "documentId": "01a0e01e-3aae-7453-9e10-2b279566b514",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Introduction and scope have scoped acceptance; supporting concept definitions remain proposals.",
+      "sourceSha256": "ed40bfd4476a71fdfdde3f15cb7bfb1982be1aa183603c9e8c6878cb8518515d",
+      "excerptStart": 526,
+      "excerptEnd": 3571,
+      "excerptSha256": "55d7daeaff9cad43971f5c71900259e2962af55723f009c3c5d54c85efb14b0f",
+      "packagedPath": "source/standard/foundations/purpose-and-scope.md",
+      "packagedSha256": "25c3d91c181756ff0d7e659fac38346c8ce38aa285f9a12bf56578227fe7c3b1"
+    },
+    {
+      "path": "standard/foundations/standard.md",
+      "documentId": "01a0e01e-3ada-710c-bafb-6990853d4348",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Candidate standard definition and provision-standing interpretation are proposals. Linked explanation direction has scoped acceptance.",
+      "sourceSha256": "fca72384241265c9dac5d4e91eb9327b28d1ac7590c43c75f4c562070562cdad",
+      "excerptStart": 496,
+      "excerptEnd": 11581,
+      "excerptSha256": "a3d8d0c2419de16700d028e359c72cababee3ad4541b78817bc37b714c3478c3",
+      "packagedPath": "source/standard/foundations/standard.md",
+      "packagedSha256": "d03c322186d42a631e57032a25f7e78505f05fbf9b9d2cc36c2bb098078fec0e"
+    },
+    {
+      "path": "standard/foundations/modeling-views.md",
+      "documentId": "01a0e01e-3a81-7375-92ae-31a6c04ad467",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Proposed complementary modeling views.",
+      "sourceSha256": "1c0728d1ec7df650d0f483ea2138412cbd30993390d1f34682ae7a8bc0fb68e4",
+      "excerptStart": 509,
+      "excerptEnd": 2740,
+      "excerptSha256": "1fa6cd3a3465ede1c2d7bb056eb6211e2c7ba46c9f9fcc49b2c687eed7a50441",
+      "packagedPath": "source/standard/foundations/modeling-views.md",
+      "packagedSha256": "aa0eb7a5354b2937d3869b42ed270931dbcc8ee077402b93cd58ccb9efc0a80c"
+    },
+    {
+      "path": "standard/foundations/mathematical-notation.md",
+      "documentId": "01a0e395-406a-7683-b469-42ae37729ec4",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T17:29:18.459697Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted symbols, interpretations and examples only; underlying draft provisions are not thereby adopted.",
+      "sourceSha256": "004440dad2d24764a39329d6a4ef655ef39b8a7cb9f6808839fb3182796a065f",
+      "excerptStart": 458,
+      "excerptEnd": 10599,
+      "excerptSha256": "b8760e933cc621c39a191de7082713ded244f28c69bc4f9e778f495e5566d6b2",
+      "packagedPath": "source/standard/foundations/mathematical-notation.md",
+      "packagedSha256": "7c336b24c124c34822929a5a77ffb37d3ae54a9a7404c44a4d3999fa9336f57a"
+    },
+    {
+      "path": "standard/ontology/concepts/need.md",
+      "documentId": "01a0e01e-3be9-70f0-9d88-483d18606240",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal. Apply separately accepted provisions only within their recorded scope.",
+      "sourceSha256": "f0c2a9a52273742629b290657650e4cb489a79299965c4c5e9509159d0df08fb",
+      "excerptStart": 485,
+      "excerptEnd": 2739,
+      "excerptSha256": "5e030295854fe21644bf5a9d56fded048ddd825cc1e4447697afb8f7fe9dbc7e",
+      "packagedPath": "source/standard/ontology/concepts/need.md",
+      "packagedSha256": "3c9929f5d457a07d8a0e99ec34d8b410df66f6d163f0814739f801098db56134"
+    },
+    {
+      "path": "standard/ontology/concepts/system.md",
+      "documentId": "01a0e01e-3cc0-7614-8715-6f30998959c3",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal. Apply separately accepted provisions only within their recorded scope.",
+      "sourceSha256": "ae8a8e623f2371d29d00967fe59d1ec714f2d5155fee4f0a7d13c70192ff14ad",
+      "excerptStart": 474,
+      "excerptEnd": 2863,
+      "excerptSha256": "32053a9ff69ed1ed700fa85ca7edacd7d8e41591d13128229b68b405adada1a7",
+      "packagedPath": "source/standard/ontology/concepts/system.md",
+      "packagedSha256": "19e72b66d048449de45a116b93075a9758a0862ad2485de2350c4130c088dae1"
+    },
+    {
+      "path": "standard/ontology/concepts/structure.md",
+      "documentId": "01a0e01e-3c94-736e-8349-395a05b5b34a",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal. Apply separately accepted provisions only within their recorded scope.",
+      "sourceSha256": "9ec78c6a2ae9fbccc30ca61d1cf0b4b46f2af301dc8c938b4befc90517963e94",
+      "excerptStart": 453,
+      "excerptEnd": 1631,
+      "excerptSha256": "bc9ec0d9c8438cafb214aeff5a3ca702510b007b9409591988391737a17f54d8",
+      "packagedPath": "source/standard/ontology/concepts/structure.md",
+      "packagedSha256": "c556d4605a7d814796eb2f8684a65de18ee6168f600e80cc6c858a500aae835c"
+    },
+    {
+      "path": "standard/ontology/concepts/process.md",
+      "documentId": "01a0e01e-3c3f-77b1-828e-11ef1cd62dc0",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal. Apply separately accepted provisions only within their recorded scope.",
+      "sourceSha256": "62e7c73cb8715988b02c71ad40ee3122603e29baa16d1616941f0c96fed9a5f3",
+      "excerptStart": 593,
+      "excerptEnd": 10819,
+      "excerptSha256": "7e77a89f82bed23c910d4158ddc589d376d042d416ae79b21f342002fda4342e",
+      "packagedPath": "source/standard/ontology/concepts/process.md",
+      "packagedSha256": "0616a43bf78a5913b25acb27fb84f6919da62f15721e795a8119419f29a9578e"
+    },
+    {
+      "path": "standard/ontology/concepts/actors-and-roles.md",
+      "documentId": "01a0e01e-3b90-747a-9879-cad266dcf69f",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal. Apply separately accepted provisions only within their recorded scope.",
+      "sourceSha256": "b295ff72513e671218c91a03a3870862b1802f4b40495e470f18134e0888c254",
+      "excerptStart": 525,
+      "excerptEnd": 6521,
+      "excerptSha256": "eb1604689f73a39fed0c75e782c16b1dbf8f71bbf9fa68e7746479d7b01a400e",
+      "packagedPath": "source/standard/ontology/concepts/actors-and-roles.md",
+      "packagedSha256": "32327cc7470b1b2a3c228ace2ff230886d9ba4c4b2bef4673bb4bef91e00ee71"
+    },
+    {
+      "path": "standard/ontology/concepts/decisions-and-evidence.md",
+      "documentId": "01a0e01e-3bbe-736c-927b-b213c96cc54a",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal. Apply separately accepted provisions only within their recorded scope.",
+      "sourceSha256": "26b3d9d29e71b92f262ea419b16f38c0cfcf1bb228bc8b3b8b8d42eccbbec54d",
+      "excerptStart": 495,
+      "excerptEnd": 1982,
+      "excerptSha256": "4a798e519955aa85772a17b09880239e760e552b4308444ab3d5845346c23a66",
+      "packagedPath": "source/standard/ontology/concepts/decisions-and-evidence.md",
+      "packagedSha256": "e0fd03ddf503f6b4aff5af21b47c7869c93e3510143cec958efa8056a6bb6a37"
+    },
+    {
+      "path": "standard/ontology/concepts/requirement.md",
+      "documentId": "01a0e01e-3c6a-7106-95fc-aab5b0fe4dad",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Requirement and high-level requirement definitions and origins remain proposed. The adequacy section and its three cases are accepted.",
+      "sourceSha256": "b7c8e2b591b4482ef322923fe93cce4255f3bf018c5e4f7a3fce4c4e5c8569e5",
+      "excerptStart": 491,
+      "excerptEnd": 13664,
+      "excerptSha256": "49486992715f2238f25bab3153531fb23aefb1b0a52b2034eec3d54e72104a52",
+      "packagedPath": "source/standard/ontology/concepts/requirement.md",
+      "packagedSha256": "f8e582290c056118bc86bd088c03c7be6182ce49d4980ca6fa9567abc275dc44"
+    },
+    {
+      "path": "standard/ontology/concepts/occurrences-and-state.md",
+      "documentId": "01a0e01e-3c14-75b8-987f-f30389916eb2",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Six meanings and optional event/occurrence representation are accepted. Patterns explain those meanings; time, inference and correction rules remain proposals.",
+      "sourceSha256": "2fcf8d16129537512386edae9c55c1a694893920562ee526c7214e981f22da2b",
+      "excerptStart": 496,
+      "excerptEnd": 12134,
+      "excerptSha256": "699485a33a9f5bcaf5021fc292411b6671d67508e0e64cdc105338ebd6cdf975",
+      "packagedPath": "source/standard/ontology/concepts/occurrences-and-state.md",
+      "packagedSha256": "6fb2ccb432ba0190c1f3ed9d90abd8717f36722b9a90af2e516648c8933c60b4"
+    },
+    {
+      "path": "standard/ontology/relationships.md",
+      "documentId": "01a0e01e-3d16-77a2-b5ce-438c3ae58d27",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Core connection and environmental arrangement choice accepted; further relation vocabulary remains proposed.",
+      "sourceSha256": "c60feb0fae517d7ba50ae4fd64ed3fe253751660c782ea4534024ab93dc1d611",
+      "excerptStart": 541,
+      "excerptEnd": 3457,
+      "excerptSha256": "1485b7bd841f1a00d569a0c069942dc85150d7f8cdcbcce0e03bd1aaa51c9913",
+      "packagedPath": "source/standard/ontology/relationships.md",
+      "packagedSha256": "df369ec76366b48566fa992317462aeb6f2499dbf825c855340ae798ba4ce3a7"
+    },
+    {
+      "path": "standard/ontology/identity-and-change.md",
+      "documentId": "01a0e01e-3ceb-77cb-b628-d6971e8b6db6",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Case revision/change rules proposed. Document identity and UUIDv7 are accepted for the source collection, not a mandatory case storage schema.",
+      "sourceSha256": "97c77f8df6ff74ee0054066103d2937a95468d727531d4ad06d6ffab25c8f49b",
+      "excerptStart": 592,
+      "excerptEnd": 3440,
+      "excerptSha256": "25b511405f8c9efcc6de87c250eb5f7621a7982286aea15488eb6fc8415ec15a",
+      "packagedPath": "source/standard/ontology/identity-and-change.md",
+      "packagedSha256": "2f68efafb0775ef2320677b35ea2c393260f914032b8ec4fe04990d69e2f312f"
+    },
+    {
+      "path": "standard/taxonomy/classification-rules.md",
+      "documentId": "01a0e01e-3d43-7755-87a3-3b912f2924da",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal; linked scoped decisions retain their own standing.",
+      "sourceSha256": "6260e830f7cf3c4487686d9cde410b359a4bf16b3339b0c126ac94eecaf47005",
+      "excerptStart": 493,
+      "excerptEnd": 2814,
+      "excerptSha256": "537b785b5231014149a7e56ad69e6caf56210e13115a40c7f453188d20ad097d",
+      "packagedPath": "source/standard/taxonomy/classification-rules.md",
+      "packagedSha256": "e5b4c585de1f716ec90ffa20d68a1965704a0af8553c388ce4f3ba242f4294f4"
+    },
+    {
+      "path": "standard/mereology/composition-and-boundaries.md",
+      "documentId": "01a0e01e-3b35-74d3-9741-b50ec876c1ad",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal; linked scoped decisions retain their own standing.",
+      "sourceSha256": "19a14978189156d53adf0f1392e86fac80846693879caeca4300b6f267e4f415",
+      "excerptStart": 523,
+      "excerptEnd": 2435,
+      "excerptSha256": "66b8d7517261c5e8eb253d17f1bb909780c8ee6deb3023025dfbeba3bd445567",
+      "packagedPath": "source/standard/mereology/composition-and-boundaries.md",
+      "packagedSha256": "8dbe52a5222e36849269715afecada2f4c57aa77590ce0c554d2d794bf3aae86"
+    },
+    {
+      "path": "standard/execution/behavior-and-responsibility.md",
+      "documentId": "01a0e01e-3a55-736b-99c2-eaa01a49fc04",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal; linked scoped decisions retain their own standing.",
+      "sourceSha256": "03dfd8fde2e35e4327a90a71e1c50fb667dd708ab34a35abfd079460d238bde8",
+      "excerptStart": 521,
+      "excerptEnd": 2308,
+      "excerptSha256": "bf69d91022c2de7ba468dd829bd8ad9c0e12aa6b069c2d5e9582ae2ccdb7fdcf",
+      "packagedPath": "source/standard/execution/behavior-and-responsibility.md",
+      "packagedSha256": "b54928890a101213f32462ece7c0836a2a733139fa645821f704f3e03ea1c394"
+    },
+    {
+      "path": "standard/information-model/records-and-provenance.md",
+      "documentId": "01a0e01e-3b07-7033-b11e-effd515beedf",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Working proposal; linked scoped decisions retain their own standing.",
+      "sourceSha256": "1d69c9cd76fbd141bf3e1fd3fa006b3d2ef75611288f061fa84a5dba57330207",
+      "excerptStart": 571,
+      "excerptEnd": 4736,
+      "excerptSha256": "e6bb40c1fa1a3ccdfe85f762f70d5ab498ec3d7b7cf2db71a07500c92cac1814",
+      "packagedPath": "source/standard/information-model/records-and-provenance.md",
+      "packagedSha256": "1ed1949473968a53fb5ef8dbdabdef983d0a5469caccf4f989fe8b988b27e0f7"
+    },
+    {
+      "path": "standard/application/case-development-baseline.md",
+      "documentId": "01a0e34b-05f5-77d3-a45a-5d0dc0f33888",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:29:18.459697Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Proposed application baseline, not a compulsory governance or storage scheme.",
+      "sourceSha256": "a24cd8c02e28dd0dae47d4344674b65e15126e0bad9d6ebac5a33538081c97fb",
+      "excerptStart": 502,
+      "excerptEnd": 15458,
+      "excerptSha256": "233209e8f8a9cb3305f41370ceaa03a5fa5f1754755a4b03bf3424b7e1df3ae0",
+      "packagedPath": "source/standard/application/case-development-baseline.md",
+      "packagedSha256": "3aa10a300e1830de8477d46cadf9658ade2732272235ee69fadae44528784a6e"
+    },
+    {
+      "path": "standard/application/problem-context-and-actor-language.md",
+      "documentId": "01a0e326-12ea-74e3-adb0-d91cca022051",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T17:29:18.459697Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted authoring direction and variable-depth dot notation; detailed role definitions, program prefix and origin vocabulary remain working proposals.",
+      "sourceSha256": "da8b510ed46e017c2099cbed60716a890edb4a9eb2844d965d02dd6c08f543c4",
+      "excerptStart": 644,
+      "excerptEnd": 11749,
+      "excerptSha256": "f8618f42afcf3aba1062531184f9308af99311630e795a0833dcbcaff231cab4",
+      "packagedPath": "source/standard/application/problem-context-and-actor-language.md",
+      "packagedSha256": "f840bae31bb709edd3df04fb4c71f5293e24c18775a6abf3a985265bbc37dad4"
+    },
+    {
+      "path": "standard/application/design-review-criteria.md",
+      "documentId": "01a0e01e-39f6-7318-a47c-0840e58b269d",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Draft review prompts, not adoption or operational success criteria.",
+      "sourceSha256": "8449813e87592930e27a21554fcc707891cce2784b46ecf943ce6c71c3cf9983",
+      "excerptStart": 538,
+      "excerptEnd": 2493,
+      "excerptSha256": "5feccce5df02a8fcdb75a02c58b0bc99d2889c551ae15a34078cad078a980ea0",
+      "packagedPath": "source/standard/application/design-review-criteria.md",
+      "packagedSha256": "e8b6cf451ab12790c2482f5cefdacf6aa0e19e875b3bef18df218ad5d272ae9c"
+    },
+    {
+      "path": "standard/assessment/requirement-and-need-fulfillment.md",
+      "documentId": "01a0e01e-3a28-77a5-94d5-5f143cba2070",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Accepted EOM-03 assessment contract only; no whole-standard release or prescribed verification method.",
+      "sourceSha256": "f7acdecdb247b8e48978cc4f8ad7fa458c028de962054a4411e805210e795bed",
+      "excerptStart": 603,
+      "excerptEnd": 15376,
+      "excerptSha256": "827e4893d4e38ed9470a850e3ac5ad1e727263211f0907ead4cc581dd519972b",
+      "packagedPath": "source/standard/assessment/requirement-and-need-fulfillment.md",
+      "packagedSha256": "3a6382ec60b942bd5cd1da8f7ad87df7afc0d9967c047ea7fa3b78103b13853f"
+    },
+    {
+      "path": "standard/assessment/competing-needs-and-tradeoffs.md",
+      "documentId": "01a0e32e-2a3d-7373-b4bf-ab84e5b8edfa",
+      "pageStatus": "draft",
+      "updatedOn": "2026-09-27T17:29:18.459697Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Working trade-off proposal, no universal scoring method.",
+      "sourceSha256": "acee8aa56000febc6f99c2c2c3bbf9ef21eba10492f11ed66b3dea39e0253766",
+      "excerptStart": 507,
+      "excerptEnd": 8276,
+      "excerptSha256": "8ecb2d547adc7ed4a8080f9f0e9a0c08f143135c3d38d89ce4403799a9f89d55",
+      "packagedPath": "source/standard/assessment/competing-needs-and-tradeoffs.md",
+      "packagedSha256": "995cfebe16418f53afc2f1ec611d9f5e3cdf17a0d8ca42cf3f85c4a79f671870"
+    },
+    {
+      "path": "notes/decisions/conditional-fulfillment-semantics.md",
+      "documentId": "01a0e145-9535-75bc-a733-a82c04bb09a6",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T16:26:16.051742Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "9be12acf6469ffc619114d67425e482c08ecf00537254b67247b05d42bcd30b6",
+      "excerptStart": 2103,
+      "excerptEnd": 3150,
+      "excerptSha256": "43d88c7c393a7ad39de0beb705a175694a8fdbd8cec994a0990700c1d4fbcf1e",
+      "packagedPath": "source/notes/decisions/conditional-fulfillment-semantics.md",
+      "packagedSha256": "da52a2808138a9695a72ffba30ab7998947e61a2137e0df80fdc596ebf7f4f3f"
+    },
+    {
+      "path": "notes/decisions/requirements-to-needs-adequacy.md",
+      "documentId": "01a0e385-4813-70d7-9738-9d5fc6adf2b4",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T17:29:18.459697Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "4cf5801733f22493ac1b65590da61d0ed6808fdbc40f1aee082503de89464d47",
+      "excerptStart": 1150,
+      "excerptEnd": 2326,
+      "excerptSha256": "ae715bdd1739b204b07b07fefec1c07699b12042d89362be46f97bc259f3e149",
+      "packagedPath": "source/notes/decisions/requirements-to-needs-adequacy.md",
+      "packagedSha256": "c96179292ee055287879aa5145ab0c83e4ab4ba722db4f0e5676534ad2504076"
+    },
+    {
+      "path": "notes/decisions/environment-specific-system-arrangements.md",
+      "documentId": "01a0e38b-3c50-7229-89e6-1049d7a546c2",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T16:26:16.051742Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "1ab7431132fbb264338a5bdb5bfaa7ab6a0d738c989ab6901e2359679ac58bc3",
+      "excerptStart": 1173,
+      "excerptEnd": 2235,
+      "excerptSha256": "c14fd9c2d1f54f8ccc1e5c2294b3f7c98e12bc43bd30011cf81d21e968fa3ff0",
+      "packagedPath": "source/notes/decisions/environment-specific-system-arrangements.md",
+      "packagedSha256": "0ea13e45ae7122371ecce957048472a3585561db84789caaf678c8dce5ec32f4"
+    },
+    {
+      "path": "notes/decisions/hierarchical-participant-role-labels.md",
+      "documentId": "01a0e34b-05f6-7061-a830-7f6248b9ef7f",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T16:26:16.051742Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "92fd84be235301d5b6db9eb21af382e8ef2cd5ca29a2a4e0656b19df54a89fca",
+      "excerptStart": 893,
+      "excerptEnd": 1652,
+      "excerptSha256": "bef05a7b3c6024bc81a070b1ade37e0502e0c8e6414e3b35c7d7fc5f822858ee",
+      "packagedPath": "source/notes/decisions/hierarchical-participant-role-labels.md",
+      "packagedSha256": "4a907028523f6c1fc40b88715d2da3e89fb1c487f602c3532ea3a6e93114ad42"
+    },
+    {
+      "path": "notes/decisions/linked-rules-and-interpretation-guidance.md",
+      "documentId": "01a0e2be-8c9d-7255-8e18-722e2a4d3705",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T16:26:16.051742Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "5353d1f585a561cb8ec2694b802d2a7ca20708b1faf9cbb7e469c72632385633",
+      "excerptStart": 1556,
+      "excerptEnd": 2165,
+      "excerptSha256": "43c07d2079717f55fcd6e525aca597ae3f436a74c95d5b5b44976b1c37dfd700",
+      "packagedPath": "source/notes/decisions/linked-rules-and-interpretation-guidance.md",
+      "packagedSha256": "2d158446afcc1e52c18b2a6bd4dd74688d39731cc80fef95645701c4f1b19341"
+    },
+    {
+      "path": "notes/decisions/system-verification-boundary.md",
+      "documentId": "01a0e01e-36f3-755a-913b-02e06cc77994",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T16:26:16.051742Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "2d9a74cbcb99547c0cc38f2598534b2ae95528be7467aacc7fb370f3335ae895",
+      "excerptStart": 1617,
+      "excerptEnd": 1957,
+      "excerptSha256": "143eb8220c19bdc1742fe4af555bf288077a86cee02a06ebfb89e7efa386b162",
+      "packagedPath": "source/notes/decisions/system-verification-boundary.md",
+      "packagedSha256": "3f7294d422fb5f24ede83d8cd2ccc013a8bd34e754be6bd976d708248bc4c1e5"
+    },
+    {
+      "path": "notes/decisions/history-and-evidence-distinctions.md",
+      "documentId": "01a0e160-b20b-7596-8f4b-bdcfa3fb451f",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T17:29:18.459697Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "f3d801ae75683210f28f7954e8ac87629f0d94ec93d7602b1b27d6e84c810c96",
+      "excerptStart": 1753,
+      "excerptEnd": 2789,
+      "excerptSha256": "65f991ce9dcd09094e1e285a7300f06bd86949c97ba17877828731fcfec34137",
+      "packagedPath": "source/notes/decisions/history-and-evidence-distinctions.md",
+      "packagedSha256": "750584ea3163d0912405442c28ccfacdc4ee3ead7b5fa5f471dd8d7e69053c32"
+    },
+    {
+      "path": "notes/decisions/programmatic-participants-and-category-first-labels.md",
+      "documentId": "01a0e339-3418-73c4-9d05-f63a0551237d",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T17:29:18.459697Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "6e58f1afe91470586d32222a54edcec13c66390bd4caa1514ef3862b5a592498",
+      "excerptStart": 1328,
+      "excerptEnd": 2310,
+      "excerptSha256": "9db1dcd7c3cf15076ddee43b29bc9210af72df2c95ad3c905df283146582f585",
+      "packagedPath": "source/notes/decisions/programmatic-participants-and-category-first-labels.md",
+      "packagedSha256": "c3850c59c002095cb01eb64dd33c78f9b194184cdbd990b77cd89e7e0012e492"
+    },
+    {
+      "path": "notes/decisions/participant-declarations-and-need-attribution.md",
+      "documentId": "01a0e32e-1d06-7510-b7f9-b6058fdd2a93",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T17:29:18.459697Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "61b528a87bbe14c07c7ec956e6787b3a82d99949ea838e02525d572e3b7d6582",
+      "excerptStart": 1129,
+      "excerptEnd": 1895,
+      "excerptSha256": "06eeccf96706c72510d140b2575f242e359bae789a6b66d8c8baa80960624e06",
+      "packagedPath": "source/notes/decisions/participant-declarations-and-need-attribution.md",
+      "packagedSha256": "269cb765b3eb017940645695efd0b445c22249b3ad5bf74fb74c6e9e92513773"
+    },
+    {
+      "path": "notes/decisions/problem-context-and-actor-language.md",
+      "documentId": "01a0e326-1852-7272-94bc-1cafaf48f2e8",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T16:26:16.051742Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "a627e5a1fb9f2deb08325d7e7ea985731c4dd421f4f564a72495e6c35b70e761",
+      "excerptStart": 1140,
+      "excerptEnd": 1935,
+      "excerptSha256": "340123ad2eee000cfe65a457c4a2aac9244fee9dfdea10adb873ce9c5744dc05",
+      "packagedPath": "source/notes/decisions/problem-context-and-actor-language.md",
+      "packagedSha256": "384c356421977a7eaec83768fd68f006a3e44bc46b8b0650059406e914efa430"
+    },
+    {
+      "path": "notes/decisions/manifold-introduction.md",
+      "documentId": "01a0e37e-84bc-73c6-bfff-82139e50040b",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T16:26:16.051742Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "966e44d94bd86bf4aa08b16e95652bae1138e4551cd28d2570cb384ad2ab4fb1",
+      "excerptStart": 918,
+      "excerptEnd": 1344,
+      "excerptSha256": "20f985cec1f93afd8867302be162b9caf6c29bafd073a2e3655eabad6bd81990",
+      "packagedPath": "source/notes/decisions/manifold-introduction.md",
+      "packagedSha256": "60ffec9367bb3a4ae1d771b2bc2a50a084d41f085cc6c55d847285c45186d3fc"
+    },
+    {
+      "path": "notes/decisions/mathematical-notation.md",
+      "documentId": "01a0e39a-d745-7638-9508-df7a851a10a4",
+      "pageStatus": "accepted",
+      "updatedOn": "2026-09-27T16:26:16.051742Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Accepted decision limited to its stated scope. Historical statements of other open work do not override subsequent scoped decisions.",
+      "sourceSha256": "46a5728f77ea98e478f148bdcb51d96626043c62ff9c35c1af315c0e6a0a56d7",
+      "excerptStart": 978,
+      "excerptEnd": 1716,
+      "excerptSha256": "afab5af7946b127449ec92c22caa6cad9da1cc58287e0e4214fea43b2ec10ce4",
+      "packagedPath": "source/notes/decisions/mathematical-notation.md",
+      "packagedSha256": "5f0e15582de37686242fdf7dd56d1830949fcccb32de73b538f97b178c653efd"
+    },
+    {
+      "path": "notes/reconciliation.md",
+      "documentId": "01a0e3b2-68c2-7327-bc0c-094bf74f739a",
+      "pageStatus": "active",
+      "updatedOn": "2026-09-27T17:45:32.583904Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Current documentary reconciliation, not adoption of the whole draft.",
+      "sourceSha256": "cd3254352b3a283f63b4f097673a73ba2c92cc8f0e8bf763ea69c38000207771",
+      "excerptStart": 490,
+      "excerptEnd": 15596,
+      "excerptSha256": "ff695547ac7c770e1cb1d359e8c3f84d4e81ebda03d990d778abe333f2339120",
+      "packagedPath": "source/notes/reconciliation.md",
+      "packagedSha256": "103e8a5f87f7f2bbcee8dcba26f1153b896c6c7d184f5026fc3f5c7cef51dd32"
+    },
+    {
+      "path": "notes/reviews/2026-09-27-core-acceptance-review/acceptance-map.md",
+      "documentId": "01a0e41c-7b78-7ef5-bf59-983c04b60fde",
+      "pageStatus": "recorded",
+      "updatedOn": "2026-09-27T18:24:27Z",
+      "authorship": {
+        "authorship": "ai",
+        "authors": []
+      },
+      "provisionStanding": "Documentary review of saved acceptance; no new owner decision.",
+      "sourceSha256": "26a3dda685d307e885d3f201b65102bef7d6da42de664a1e68d98fe7b427a0f0",
+      "excerptStart": 392,
+      "excerptEnd": 9212,
+      "excerptSha256": "28f1e0f294a27aa479d62d12dcf409c6d21248cf26ea27618794037d9b0aa424",
+      "packagedPath": "source/notes/reviews/2026-09-27-core-acceptance-review/acceptance-map.md",
+      "packagedSha256": "ae2357d0f8f7ea56b0a772d093d2adeface7eb5df3f329fcaac227b3a2dfdeff"
+    },
+    {
+      "path": "examples/personal-learning-review.md",
+      "documentId": "01a0e11f-bcb7-7279-ab67-db404407298f",
+      "pageStatus": "illustrative",
+      "updatedOn": "2026-09-27T16:26:16.051742Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Stipulated hypothetical example, not operating evidence.",
+      "sourceSha256": "6d04587c58436ef4ee6d89990ff414d146968d7f9f063df68c9a0885550127eb",
+      "excerptStart": 501,
+      "excerptEnd": 8697,
+      "excerptSha256": "033793c591a296b084fec24179665e018d875534a89e8e88c9b9c53c78c8e61b",
+      "packagedPath": "source/examples/personal-learning-review.md",
+      "packagedSha256": "248aeb21dbaf0ead72a0b67159bf513844bebff7a63a37c21a7277f9f0d78bb5"
+    },
+    {
+      "path": "examples/business-payroll-handoff.md",
+      "documentId": "01a0e121-0881-70c2-aacf-336b6ff1c910",
+      "pageStatus": "illustrative",
+      "updatedOn": "2026-09-27T17:34:55.937530Z",
+      "authorship": {
+        "authorship": "unknown",
+        "authors": []
+      },
+      "provisionStanding": "Stipulated hypothetical example, not operating evidence.",
+      "sourceSha256": "9d0c62e875e3ec3dc8d3628f1023b45154dcdf4350e26b89ee05c656b49d7b1d",
+      "excerptStart": 523,
+      "excerptEnd": 10155,
+      "excerptSha256": "d1f7958e8591f8d56a41ee67810a75df4b20fafdaf229ed6288e9eed7d903924",
+      "packagedPath": "source/examples/business-payroll-handoff.md",
+      "packagedSha256": "c8b4d86bdd8de262074d76fd5ce2e80295888d8cb6067439ec535005c374c024"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+*.egg-info/
+build/
+dist/
+node_modules/
+secrets/
+data/
+.alexandria-inbound/
+*.sqlite3-shm
+*.sqlite3-wal
+# LanceDB's in-memory test sessions may leave this marker at the checkout root.
+:memory:.ses
+*.tmp
+.local/
+.ty_cache/
+.coverage
+coverage.xml

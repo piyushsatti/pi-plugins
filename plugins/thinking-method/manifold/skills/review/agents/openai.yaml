@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manifold: Review alignment and trade-offs"
+  short_description: "Review alignment and trade-offs with attributed context and scoped conclusions."
+  default_prompt: "Use Manifold to review alignment and trade-offs using the supplied context."
+policy:
+  allow_implicit_invocation: true

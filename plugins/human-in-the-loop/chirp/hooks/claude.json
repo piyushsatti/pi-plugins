@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'exec \"$HOME/.local/bin/chirp-hook\"'",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

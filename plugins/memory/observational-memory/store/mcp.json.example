@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "memory": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "exec python3 \"$HOME/.local/share/memory/bin/launch.py\""
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manifold: Init"
+  short_description: "Establish a global space through guided rounds."
+  default_prompt: "Use $init to establish or resume my global Manifold space."
+policy:
+  allow_implicit_invocation: true

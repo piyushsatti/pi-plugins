@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manifold: Discover needs"
+  short_description: "Discover needs with attributed context and scoped conclusions."
+  default_prompt: "Use Manifold to discover needs using the supplied context."
+policy:
+  allow_implicit_invocation: true
